@@ -40,12 +40,7 @@ jobs:
       - name: Read Python versions from config
         id: get_versions
         run: |
-          VERSIONS=$(python3 - <<EOF
-import yaml
-cfg = yaml.safe_load(open("config/versions.yaml"))
-print(",".join(cfg["python_versions"]))
-EOF
-)
+          VERSIONS=$(python3 -c "import yaml; cfg=yaml.safe_load(open('config/versions.yaml')); print(','.join(cfg['python_versions']))")
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
 
   build:
@@ -54,7 +49,7 @@ EOF
 
     strategy:
       matrix:
-        python-version: ${{ fromJson(format('["{0}"]', join('","', split(needs.prepare.outputs.versions, ',')))) }}
+        python-version: ${{ fromJson('["' + replace(needs.prepare.outputs.versions, ',', '","') + '"]') }}
 
     permissions:
       contents: read
