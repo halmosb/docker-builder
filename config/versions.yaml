@@ -1,0 +1,13 @@
+python_versions:
+  - "3.12"
+  - "3.13"
+  - "3.14"
+
+cuda:
+  version: "12.1.1"
+  cudnn: "8"
+  ubuntu: "22.04"
+
+pytorch:
+  cpu_index: "https://download.pytorch.org/whl/cpu"
+  gpu_index: "https://download.pytorch.org/whl/cu121"
