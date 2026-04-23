@@ -120,7 +120,7 @@ git push origin v1.0.0
 Images are published to:
 
 ```text
-ghcr.io/bhalmos/docker-builder/python
+ghcr.io/halmosb/docker-builder/python
 ```
 
 ### Tag format
@@ -128,20 +128,20 @@ ghcr.io/bhalmos/docker-builder/python
 For each Python version for CPU:
 
 ```text
-ghcr.io/bhalmos/docker-builder/python:<python-version>-cpu-<git-tag>
-ghcr.io/bhalmos/docker-builder/python:<python-version>-cpu
+ghcr.io/halmosb/docker-builder/python:<python-version>-cpu-<git-tag>
+ghcr.io/halmosb/docker-builder/python:<python-version>-cpu
 ```
 and for GPU:
 ```text
-ghcr.io/bhalmos/docker-builder/python:<python-version>-gpu-<git-tag>
-ghcr.io/bhalmos/docker-builder/python:<python-version>-gpu
+ghcr.io/halmosb/docker-builder/python:<python-version>-gpu-<git-tag>
+ghcr.io/halmosb/docker-builder/python:<python-version>-gpu
 ```
 
 Example:
 
 ```text
-ghcr.io/bhalmos/docker-builder/python:3.14-cpu-v0.0.2
-ghcr.io/bhalmos/docker-builder/python:3.14-gpu
+ghcr.io/halmosb/docker-builder/python:3.14-cpu-v0.0.2
+ghcr.io/halmosb/docker-builder/python:3.14-gpu
 ```
 
 ### Latest tag
@@ -149,7 +149,7 @@ ghcr.io/bhalmos/docker-builder/python:3.14-gpu
 Optionally:
 
 ```text
-ghcr.io/bhalmos/docker-builder/python:latest
+ghcr.io/halmosb/docker-builder/python:latest
 ```
 
 Typically mapped to a chosen version (e.g. 3.14-cpu).
@@ -161,13 +161,13 @@ Typically mapped to a chosen version (e.g. 3.14-cpu).
 ### Pull
 
 ```bash
-docker pull ghcr.io/bhalmos/docker-builder/python:3.14-cpu
+docker pull ghcr.io/halmosb/docker-builder/python:3.14-cpu
 ```
 
 ### Use in Dockerfile
 
 ```Dockerfile
-FROM ghcr.io/bhalmos/docker-builder/python:3.14-cpu
+FROM ghcr.io/halmosb/docker-builder/python:3.14-cpu
 ```
 
 ### Use in GitHub Actions
@@ -177,7 +177,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bhalmos/docker-builder/python:3.14-cpu
+      image: ghcr.io/halmosb/docker-builder/python:3.14-cpu
 ```
 
 ---
@@ -187,8 +187,8 @@ jobs:
 The workflow uses registry-based caching:
 
 ```yaml
-cache-from: type=registry,ref=ghcr.io/bhalmos/docker-builder/cache
-cache-to: type=registry,ref=ghcr.io/bhalmos/docker-builder/cache,mode=max
+cache-from: type=registry,ref=ghcr.io/halmosb/docker-builder/cache
+cache-to: type=registry,ref=ghcr.io/halmosb/docker-builder/cache,mode=max
 ```
 
 ### Benefits
