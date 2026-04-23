@@ -1,0 +1,61 @@
+name: Test Docker Build (CI)
+
+on:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "v*"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      python_version: ${{ steps.get_latest.outputs.python_version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python deps
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Get latest Python version from config
+        id: get_latest
+        run: |
+          VERSION=$(python3 -c "import yaml; cfg = yaml.safe_load(open('config/versions.yaml')); print(cfg['python_versions'][-1])"
+          echo "python_version=$VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        device-type: [cpu, gpu]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install generator deps
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Dockerfiles
+        run: python scripts/generate.py
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: generated/Dockerfile.${{ matrix.device-type }}.${{ needs.prepare.outputs.python_version }}
+          push: false
+          load: false
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/cache
+          cache-to: type=inline
