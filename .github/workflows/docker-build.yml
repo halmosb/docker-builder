@@ -48,8 +48,10 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: true
       matrix:
         python-version: ${{ fromJson(needs.prepare.outputs.versions) }}
+        device-type: [cpu, gpu]
 
     permissions:
       contents: read
@@ -85,17 +87,17 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: generated/Dockerfile.cpu.${{ matrix.python-version }}
+          file: generated/Dockerfile.${{ matrix.device-type }}.${{ matrix.python-version }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-cpu-${{ env.TAG }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-cpu
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/cache,mode=max
 
       - name: Tag and push "latest"
-        if: matrix.python-version == '3.14'
+        if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:3.14-cpu-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}

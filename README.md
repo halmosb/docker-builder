@@ -33,13 +33,13 @@ It is designed to:
 │   └── versions.yaml        # Defines Python versions
 ├── generated/               # Auto-generated Dockerfiles
 ├── scripts/
-│  ├── build.sh              # Building container locally   
-│  ├── clean.sh              # Cleaning local containers   
-│  ├── generate.py           # Generates the Dockerfiles  
-│  └── run.sh                # Runs a docker container locally
+│   ├── build.sh              # Building container locally   
+│   ├── clean.sh              # Cleaning local containers   
+│   ├── generate.py           # Generates the Dockerfiles  
+│   └── run.sh                # Runs a docker container locally
 ├── templates/               # Template Dockerfiles
-│  ├── Dockerfile.cpu.j2     # CPU Dockerfile template  
-│  └── Dockerfile.gpu.j2     # GPU Dockerfile template
+│   ├── Dockerfile.cpu.j2     # CPU Dockerfile template  
+│   └── Dockerfile.gpu.j2     # GPU Dockerfile template
 ├── .gitignore               # Not tracked files
 ├── LICENSE                  # License file
 ├── README.md                # Usage info
@@ -125,18 +125,23 @@ ghcr.io/bhalmos/docker-builder/python
 
 ### Tag format
 
-For each Python version:
+For each Python version for CPU:
 
 ```text
 ghcr.io/bhalmos/docker-builder/python:<python-version>-cpu-<git-tag>
 ghcr.io/bhalmos/docker-builder/python:<python-version>-cpu
+```
+and for GPU:
+```text
+ghcr.io/bhalmos/docker-builder/python:<python-version>-gpu-<git-tag>
+ghcr.io/bhalmos/docker-builder/python:<python-version>-gpu
 ```
 
 Example:
 
 ```text
 ghcr.io/bhalmos/docker-builder/python:3.14-cpu-v0.0.2
-ghcr.io/bhalmos/docker-builder/python:3.14-cpu
+ghcr.io/bhalmos/docker-builder/python:3.14-gpu
 ```
 
 ### Latest tag
@@ -147,7 +152,7 @@ Optionally:
 ghcr.io/bhalmos/docker-builder/python:latest
 ```
 
-Typically mapped to a chosen version (e.g. 3.14).
+Typically mapped to a chosen version (e.g. 3.14-cpu).
 
 ---
 
@@ -156,7 +161,7 @@ Typically mapped to a chosen version (e.g. 3.14).
 ### Pull
 
 ```bash
-docker pull ghcr.io/bhalmos/docker-builder/python:3.12-cpu
+docker pull ghcr.io/bhalmos/docker-builder/python:3.14-cpu
 ```
 
 ### Use in Dockerfile
@@ -234,19 +239,8 @@ Modify `scripts/generate.py` to:
 
 ---
 
-### Add GPU support (future)
-
-You can extend this system to:
-
-* Generate CUDA-based images
-* Use different base images
-* Add multi-arch builds
-
----
-
 ## ⚠️ Known Limitations
 
-* CPU-only builds (due to GitHub Actions runners)
 * No multi-architecture images (yet)
 * No automatic cleanup of old tags
 
@@ -254,9 +248,8 @@ You can extend this system to:
 
 ## 🧩 Future Improvements
 
-* GPU-enabled variants
 * Automatic pruning of old images
-* Semantic version branching (e.g. `3.12-latest`)
+* Semantic version branching (e.g. `3.14-latest`)
 * Parallel matrix optimizations
 
 ---

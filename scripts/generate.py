@@ -26,10 +26,8 @@ def generate():
         ctx = {
             "python_version": py,
             "cuda_version": cfg["cuda"]["version"],
-            "cudnn": cfg["cuda"]["cudnn"],
             "ubuntu": cfg["cuda"]["ubuntu"],
             "pytorch_cpu_index": cfg["pytorch"]["cpu_index"],
-            "pytorch_gpu_index": cfg["pytorch"]["gpu_index"],
         }
 
         # CPU
