@@ -83,7 +83,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push (cached)
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -91,8 +91,8 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/cache:${{ matrix.device-type }}-${{ matrix.python-version }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/cache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Tag and push stable alias
         run: |
