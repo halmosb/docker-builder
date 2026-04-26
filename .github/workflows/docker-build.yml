@@ -84,6 +84,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Single build → multiple tags → ONE manifest
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
@@ -91,11 +92,10 @@ jobs:
           file: generated/Dockerfile.${{ matrix.device-type }}.${{ matrix.python-version }}
           push: true
 
-          # ONLY final image goes here
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
 
-          # Cache isolated in separate repo
           cache-from: |
             type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
           cache-to: |
@@ -104,14 +104,7 @@ jobs:
           provenance: false
           outputs: type=registry
 
-      # Stable alias
-      - name: Tag stable alias
-        run: |
-          docker buildx imagetools create \
-            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }} \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
-
-      # Latest alias
+      # latest only for one combination
       - name: Tag latest
         if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
