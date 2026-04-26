@@ -20,3 +20,6 @@ highlight DiffText   ctermfg=NONE ctermbg=blue  guibg=#89b4fa
 " Fugitive diffget shortcuts
 nnoremap <silent> ml :diffget //2<CR>
 nnoremap <silent> mr :diffget //3<CR>
+
+" Jukit directory
+let g:jukit_dir = '~/.jukit'
