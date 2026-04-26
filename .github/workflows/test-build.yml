@@ -31,7 +31,7 @@ jobs:
       - name: Set device matrix
         id: set_matrix
         run: |
-          if [[ "${GITHUB_REF_NAME}" == gpu-feature* ]]; then
+          if [[ "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" == gpu-feature* ]]; then
             echo 'device_matrix=["cpu","gpu"]' >> $GITHUB_OUTPUT
           else
             echo 'device_matrix=["cpu"]' >> $GITHUB_OUTPUT
