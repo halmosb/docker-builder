@@ -96,9 +96,9 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
           cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
           cache-to: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
 
           provenance: false
           outputs: type=registry
