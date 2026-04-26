@@ -87,6 +87,9 @@ docker run -it --rm \
   bash
 ```
 
+> [!NOTE]
+> When podman is used, additionally `--userns=keep-id` argument is needed.
+
 ---
 
 ### Option B: Extend the Base Image (Better for stability)
