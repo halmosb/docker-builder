@@ -81,6 +81,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
+            ${{ matrix.python-version == '3.14' && matrix.device-type == 'cpu' && format('{0}/{1}/{2}/python:latest', env.REGISTRY, env.OWNER, env.REPO) || '' }}
 
           cache-from: |
             type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
@@ -88,19 +89,6 @@ jobs:
             type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
 
           provenance: false
-
-      - name: Add latest tag (no rebuild)
-        if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
-        run: |
-          docker buildx imagetools inspect \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }} \
-            --format '{{json .Manifest.Digest}}' | tr -d '"' > digest.txt
-
-            DIGEST=$(cat digest.txt)
-
-            docker buildx imagetools create \
-              -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest \
-              ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python@${DIGEST}
 
   # SINGLE WRITER JOB → avoids race + cleans old tags
   finalize:
