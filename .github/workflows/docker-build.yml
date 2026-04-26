@@ -110,7 +110,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # latest tag (single place → no race)
+      #  latest tag (single place → no race)
       - name: Update latest
         run: |
           docker buildx imagetools create \
