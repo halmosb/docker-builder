@@ -15,9 +15,6 @@ call plug#end()
 " General
 " ---------------------------------
 
-" "+y copy to system clipboard
-set clipboard=unnamedplus
-
 " ---------------------------------
 " Fugitive
 " ---------------------------------
@@ -41,9 +38,3 @@ let g:jukit_dir = expand('~/.jukit')
 
 " Run and jump to next cell with \\
 nnoremap <leader>\ :call jukit#send#section(1)<CR>
-
-" Match Jukit cell markers like # %%
-syntax match JukitCellMarker /^# %%.*$/
-
-" Link it to a visible highlight group
-highlight link JukitCellMarker SpecialComment

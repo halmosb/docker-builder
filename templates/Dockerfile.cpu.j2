@@ -11,11 +11,11 @@ ARG GID=1000
 # System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        vim-nox \
+        vim-gtk3 \
         git \
         build-essential \
         curl \
-        xclip \
+        wl-clipboard \
     && rm -rf /var/lib/apt/lists/*
 
 # Create user
