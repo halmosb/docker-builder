@@ -1,6 +1,12 @@
 # Generated files
 generated
 
+# Jukit
+.jukit
+
+# vim
+*.swp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
