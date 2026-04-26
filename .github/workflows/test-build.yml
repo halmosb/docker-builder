@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       python_version: ${{ steps.get_latest.outputs.python_version }}
+      device_matrix: ${{ steps.set_matrix.outputs.device_matrix }}
 
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +28,15 @@ jobs:
           VERSION=$(python3 -c "import yaml; cfg = yaml.safe_load(open('config/versions.yaml')); print(cfg['python_versions'][-1])")
           echo "python_version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Set device matrix
+        id: set_matrix
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == gpu-feature* ]]; then
+            echo 'device_matrix=["cpu","gpu"]' >> $GITHUB_OUTPUT
+          else
+            echo 'device_matrix=["cpu"]' >> $GITHUB_OUTPUT
+          fi
+
   build:
     needs: prepare
     runs-on: ubuntu-latest
@@ -34,7 +44,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        device-type: [cpu, gpu]
+        device-type: ${{ fromJson(needs.prepare.outputs.device_matrix) }}
 
     steps:
       - uses: actions/checkout@v4
