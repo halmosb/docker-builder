@@ -77,6 +77,8 @@ pip install numpy pandas matplotlib
 ### Option A: Use a Docker Volume for pip cache
 
 ```
+cd my-project
+
 docker run -it --rm \
   -v $(pwd):/workspace \
   -v pip-cache:/root/.cache/pip \
