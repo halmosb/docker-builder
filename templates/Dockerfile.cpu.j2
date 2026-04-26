@@ -1,18 +1,61 @@
 FROM python:{{ python_version }}-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
+ARG USERNAME=dev
+ARG UID=1000
+ARG GID=1000
+
+# System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        vim \
+        vim-gtk3 \
         git \
         build-essential \
         curl \
+        wl-clipboard \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip setuptools wheel
+# Create user
+RUN groupadd -g ${GID} ${USERNAME} && \
+    useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME}
 
-RUN pip install torch torchvision torchaudio \
-    --index-url {{ pytorch_cpu_index }}
+# Set workdir
+RUN mkdir -p /workspace && chown ${USERNAME}:${USERNAME} /workspace
+WORKDIR /workspace
+
+# Python deps
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel ipython matplotlib && \
+    pip install --no-cache-dir \
+        torch torchvision torchaudio \
+        --index-url {{ pytorch_cpu_index }}
+
+# Switch to user
+USER ${USERNAME}
+ENV HOME=/home/${USERNAME}
+
+# ----------------------------
+# Git config
+# ----------------------------
+RUN git config --global --add safe.directory /workspace && \
+    git config --global core.editor "vim" && \
+    git config --global alias.lga "log --all --graph --decorate --oneline" && \
+    git config --global alias.lg "log --graph --decorate --oneline"
+
+# ----------------------------
+# Vim setup
+# ----------------------------
+
+# Install vim-plug
+RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+# Copy your vimrc template
+COPY --chown=${USERNAME}:${USERNAME} templates/.vimrc_template ${HOME}/.vimrc
+
+# Install plugins (headless)
+RUN vim +PlugInstall +qall
 
 CMD ["python3"]
