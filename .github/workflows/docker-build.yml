@@ -94,6 +94,7 @@ jobs:
 
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
 
           cache-from: |
             type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
@@ -102,13 +103,6 @@ jobs:
 
           provenance: false
           outputs: type=registry
-
-      # ✅ Move stable alias WITHOUT new manifest
-      - name: Update stable alias
-        run: |
-          docker buildx imagetools create --append \
-            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }} \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
       # ✅ latest ONLY for canonical target
       - name: Update latest
