@@ -89,6 +89,18 @@ jobs:
 
           provenance: false
 
+      - name: Add latest tag (no rebuild)
+        if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
+        run: |
+          docker buildx imagetools inspect \
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }} \
+            --format '{{json .Manifest.Digest}}' | tr -d '"' > digest.txt
+
+            DIGEST=$(cat digest.txt)
+
+            docker buildx imagetools create \
+              -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest \
+              ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python@${DIGEST}
 
   # SINGLE WRITER JOB → avoids race + cleans old tags
   finalize:
@@ -109,13 +121,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      #  latest tag (single place → no race)
-      - name: Update latest
-        run: |
-          docker buildx imagetools create \
-            -t ghcr.io/${OWNER}/${REPO}/python:latest \
-            ghcr.io/${OWNER}/${REPO}/python:3.14-cpu-${TAG}
 
       # DELETE old floating tags (clean registry)
       - name: Remove old stable tags
