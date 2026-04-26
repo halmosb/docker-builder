@@ -93,12 +93,12 @@ jobs:
           push: true
 
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
           cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}-${{ env.TAG }}
           cache-to: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}-${{ env.TAG }},mode=max
 
           provenance: false
           outputs: type=registry
@@ -106,7 +106,7 @@ jobs:
       - name: Update stable alias
         run: |
           TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
-          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}
+          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
           if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
             echo "Alias exists → appending"
@@ -120,7 +120,7 @@ jobs:
         if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
           TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest
-          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}
+          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
           if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
             echo "Latest exists → appending"
