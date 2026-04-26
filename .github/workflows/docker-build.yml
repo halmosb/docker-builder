@@ -94,10 +94,20 @@ jobs:
 
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
+
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
 
           provenance: false
           outputs: type=registry
+
+      - name: Update stable alias
+        run: |
+          docker buildx imagetools create --append \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }} \
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
       - name: Update latest
         if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
