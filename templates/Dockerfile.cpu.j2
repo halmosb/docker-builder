@@ -1,7 +1,18 @@
 FROM python:{{ python_version }}-slim
 
+# Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Prevent Python from writing .pyc files and enable unbuffered logs
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Optional: match host UID/GID (can be overridden at build time)
+ARG USERNAME=dev
+ARG UID=1000
+ARG GID=1000
+
+# System dependencies + cleanup in single layer
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         vim \
@@ -10,9 +21,32 @@ RUN apt-get update && \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip setuptools wheel
+# Create non-root user
+RUN groupadd -g ${GID} ${USERNAME} && \
+    useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME}
 
-RUN pip install torch torchvision torchaudio \
+# Set working directory
+WORKDIR /workspace
+
+# Upgrade pip without cache
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install PyTorch (CPU)
+RUN pip install --no-cache-dir \
+    torch torchvision torchaudio \
     --index-url {{ pytorch_cpu_index }}
+
+# Switch to non-root user
+USER ${USERNAME}
+
+# Configure git for the user
+RUN git config --global core.editor "vim" && \
+    git config --global alias.lga "log --all --graph --decorate --oneline" && \
+    git config --global alias.lg "log --graph --decorate --oneline"
+
+# Optional: nicer vim defaults
+RUN echo "set number" >> ~/.vimrc && \
+    echo "syntax on" >> ~/.vimrc && \
+    echo "set tabstop=4 shiftwidth=4 expandtab" >> ~/.vimrc
 
 CMD ["python3"]
