@@ -105,13 +105,27 @@ jobs:
 
       - name: Update stable alias
         run: |
-          docker buildx imagetools create --append \
-            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }} \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
+          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+
+          if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
+            echo "Alias exists → appending"
+            docker buildx imagetools create --append -t $TARGET $SOURCE
+          else
+            echo "Alias does not exist → creating"
+            docker buildx imagetools create -t $TARGET $SOURCE
+          fi
 
       - name: Update latest
         if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
-          docker buildx imagetools create --append \
-            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest
+          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+
+          if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
+            echo "Latest exists → appending"
+            docker buildx imagetools create --append -t $TARGET $SOURCE
+          else
+            echo "Latest does not exist → creating"
+            docker buildx imagetools create -t $TARGET $SOURCE
+          fi
