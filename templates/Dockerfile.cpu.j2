@@ -8,6 +8,8 @@ ARG USERNAME=dev
 ARG UID=1000
 ARG GID=1000
 
+LABEL org.opencontainers.image.description Docker image with python {{ python_version }}.
+
 # System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
