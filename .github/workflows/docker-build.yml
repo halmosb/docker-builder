@@ -20,27 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Normalize names
-        id: vars
+      - id: vars
         run: |
           echo "owner_lc=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "repo_lc=$(echo '${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-      - name: Extract Git tag
-        id: tag
+      - id: tag
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Install Python deps
-        run: |
-          python3 -m pip install --upgrade pip
+      - run: |
           pip install pyyaml
 
-      - name: Read Python versions
-        id: get_versions
+      - id: get_versions
         run: |
-          VERSIONS=$(python3 -c "import yaml, json; cfg=yaml.safe_load(open('config/versions.yaml')); print(json.dumps(cfg['python_versions']))")
+          VERSIONS=$(python3 -c "import yaml,json;print(json.dumps(yaml.safe_load(open('config/versions.yaml'))['python_versions']))")
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
 
 
@@ -49,7 +43,6 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: true
       matrix:
         python-version: ${{ fromJson(needs.prepare.outputs.versions) }}
         device-type: [cpu, gpu]
@@ -66,26 +59,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install generator deps
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python scripts/generate.py
 
-      - name: Generate Dockerfiles
-        run: python scripts/generate.py
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ✅ ONLY immutable tag here
-      - name: Build and push image
+      # BUILD DIRECTLY INTO FINAL REPO (multi-tag = ONE manifest)
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -93,39 +79,56 @@ jobs:
           push: true
 
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
 
           cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}-${{ env.TAG }}
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
           cache-to: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}-${{ env.TAG }},mode=max
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
 
           provenance: false
-          outputs: type=registry
 
-      - name: Update stable alias
-        run: |
-          TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
-          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
-          if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
-            echo "Alias exists → appending"
-            docker buildx imagetools create --append -t $TARGET -t $TARGET-${{ env.TAG }} $SOURCE
-          else
-            echo "Alias does not exist → creating"
-            docker buildx imagetools create -t $TARGET -t $TARGET-${{ env.TAG }} $SOURCE
-          fi
+  # SINGLE WRITER JOB → avoids race + cleans old tags
+  finalize:
+    needs: [build, prepare]
+    runs-on: ubuntu-latest
 
+    permissions:
+      packages: write
+
+    env:
+      OWNER: ${{ needs.prepare.outputs.owner_lc }}
+      REPO: ${{ needs.prepare.outputs.repo_lc }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # latest tag (single place → no race)
       - name: Update latest
-        if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
-          TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest
-          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          docker buildx imagetools create \
+            -t ghcr.io/${OWNER}/${REPO}/python:latest \
+            ghcr.io/${OWNER}/${REPO}/python:3.14-cpu-${TAG}
 
-          if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
-            echo "Latest exists → appending"
-            docker buildx imagetools create --append -t $TARGET $SOURCE
-          else
-            echo "Latest does not exist → creating"
-            docker buildx imagetools create -t $TARGET $SOURCE
-          fi
+      # DELETE old floating tags (clean registry)
+      - name: Remove old stable tags
+        run: |
+          TAGS=$(gh api \
+            /orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions \
+            --jq '.[].metadata.container.tags[]' | grep -E '^[0-9]+\.[0-9]+-(cpu|gpu)$' || true)
+
+          for t in $TAGS; do
+            if [[ "$t" != *"${TAG}"* ]]; then
+              echo "Deleting old tag: $t"
+              gh api \
+                --method DELETE \
+                /orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions/$(gh api /orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions --jq ".[] | select(.metadata.container.tags[]==\"$t\") | .id")
+            fi
+          done
