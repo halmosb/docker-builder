@@ -22,4 +22,4 @@ nnoremap <silent> ml :diffget //2<CR>
 nnoremap <silent> mr :diffget //3<CR>
 
 " Jukit directory
-let g:jukit_dir = '~/.jukit'
+let g:jukit_dir = expand('~/.jukit')

@@ -22,6 +22,7 @@ RUN groupadd -g ${GID} ${USERNAME} && \
     useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME}
 
 # Set workdir
+RUN mkdir -p /workspace && chown ${USERNAME}:${USERNAME} /workspace
 WORKDIR /workspace
 
 # Python deps
