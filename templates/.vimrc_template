@@ -1,0 +1,22 @@
+" vim-plug package manager packages
+"     :PlugInstall    to install packages
+"     :PlugClean      to remove packages
+
+call plug#begin()
+
+" Jupyter like environment
+Plug 'luk400/vim-jukit'
+" Git
+Plug 'tpope/vim-fugitive'
+
+call plug#end()
+
+" Diff colors
+highlight DiffAdd    ctermfg=NONE ctermbg=green guibg=#a6e3a1
+highlight DiffDelete ctermfg=NONE ctermbg=red   guibg=#f38ba8
+highlight DiffChange ctermfg=NONE ctermbg=yellow guibg=#f9e2af
+highlight DiffText   ctermfg=NONE ctermbg=blue  guibg=#89b4fa
+
+" Fugitive diffget shortcuts
+nnoremap <silent> ml :diffget //2<CR>
+nnoremap <silent> mr :diffget //3<CR>

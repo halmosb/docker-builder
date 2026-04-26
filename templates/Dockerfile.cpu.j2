@@ -1,18 +1,14 @@
 FROM python:{{ python_version }}-slim
 
-# Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
-
-# Prevent Python from writing .pyc files and enable unbuffered logs
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Optional: match host UID/GID (can be overridden at build time)
 ARG USERNAME=dev
 ARG UID=1000
 ARG GID=1000
 
-# System dependencies + cleanup in single layer
+# System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         vim \
@@ -21,32 +17,42 @@ RUN apt-get update && \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
+# Create user
 RUN groupadd -g ${GID} ${USERNAME} && \
     useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME}
 
-# Set working directory
+# Set workdir
 WORKDIR /workspace
 
-# Upgrade pip without cache
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+# Python deps
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+        torch torchvision torchaudio \
+        --index-url {{ pytorch_cpu_index }}
 
-# Install PyTorch (CPU)
-RUN pip install --no-cache-dir \
-    torch torchvision torchaudio \
-    --index-url {{ pytorch_cpu_index }}
-
-# Switch to non-root user
+# Switch to user
 USER ${USERNAME}
+ENV HOME=/home/${USERNAME}
 
-# Configure git for the user
+# ----------------------------
+# Git config
+# ----------------------------
 RUN git config --global core.editor "vim" && \
     git config --global alias.lga "log --all --graph --decorate --oneline" && \
     git config --global alias.lg "log --graph --decorate --oneline"
 
-# Optional: nicer vim defaults
-RUN echo "set number" >> ~/.vimrc && \
-    echo "syntax on" >> ~/.vimrc && \
-    echo "set tabstop=4 shiftwidth=4 expandtab" >> ~/.vimrc
+# ----------------------------
+# Vim setup
+# ----------------------------
+
+# Install vim-plug
+RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+# Copy your vimrc template
+COPY --chown=${USERNAME}:${USERNAME} templates/.vimrc_template ${HOME}/.vimrc
+
+# Install plugins (headless)
+RUN vim +PlugInstall +qall
 
 CMD ["python3"]
