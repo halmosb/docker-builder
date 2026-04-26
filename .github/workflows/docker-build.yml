@@ -90,7 +90,7 @@ jobs:
 
           provenance: false
 
-  # SINGLE WRITER JOB → avoids race + cleans old tags
+  #  SINGLE WRITER JOB → avoids race + cleans old tags
   finalize:
     needs: [build, prepare]
     runs-on: ubuntu-latest
