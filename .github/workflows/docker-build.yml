@@ -1,4 +1,4 @@
-name: Build and Push CPU Docker Images
+name: Build and Push Docker Images
 
 on:
   push:
@@ -37,11 +37,12 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install pyyaml
 
-      - name: Read Python versions from config
+      - name: Read Python versions
         id: get_versions
         run: |
-          VERSIONS=$(python3 -c "import yaml; cfg=yaml.safe_load(open('config/versions.yaml')); import json; print(json.dumps(cfg['python_versions']))")
+          VERSIONS=$(python3 -c "import yaml, json; cfg=yaml.safe_load(open('config/versions.yaml')); print(json.dumps(cfg['python_versions']))")
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
+
 
   build:
     needs: prepare
@@ -73,34 +74,45 @@ jobs:
       - name: Generate Dockerfiles
         run: python scripts/generate.py
 
-      - name: Set up Docker Buildx
+      - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: generated/Dockerfile.${{ matrix.device-type }}.${{ matrix.python-version }}
           push: true
+
+          # ONLY final image goes here
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
 
-      - name: Tag and push stable alias
+          # Cache isolated in separate repo
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }},mode=max
+
+          provenance: false
+          outputs: type=registry
+
+      # Stable alias
+      - name: Tag stable alias
         run: |
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }} \
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
 
-      - name: Tag and push "latest"
+      # Latest alias
+      - name: Tag latest
         if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
           docker buildx imagetools create \
