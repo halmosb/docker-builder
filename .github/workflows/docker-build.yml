@@ -93,7 +93,7 @@ jobs:
           push: true
 
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}
 
           cache-from: |
             type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
@@ -106,7 +106,7 @@ jobs:
       - name: Update stable alias
         run: |
           TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
-          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}
 
           if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
             echo "Alias exists → appending"
@@ -120,7 +120,7 @@ jobs:
         if: matrix.python-version == '3.14' && matrix.device-type == 'cpu'
         run: |
           TARGET=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:latest
-          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          SOURCE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/buildcache:${{ matrix.python-version }}-${{ matrix.device-type }}
 
           if docker buildx imagetools inspect $TARGET > /dev/null 2>&1; then
             echo "Latest exists → appending"
