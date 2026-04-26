@@ -34,12 +34,12 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel ipython matplotlib
 # Switch to user
 USER ${USERNAME}
 ENV HOME=/home/${USERNAME}
-RUN git config --global --add safe.directory /workspace
 
 # ----------------------------
 # Git config
 # ----------------------------
-RUN git config --global core.editor "vim" && \
+RUN git config --global --add safe.directory /workspace && \
+    git config --global core.editor "vim" && \
     git config --global alias.lga "log --all --graph --decorate --oneline" && \
     git config --global alias.lg "log --graph --decorate --oneline"
 
