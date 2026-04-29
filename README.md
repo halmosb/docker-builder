@@ -140,7 +140,7 @@ ghcr.io/halmosb/docker-builder/python:<python-version>-gpu
 Example:
 
 ```text
-ghcr.io/halmosb/docker-builder/python:3.14-cpu-v0.0.2
+ghcr.io/halmosb/docker-builder/python:3.14-cpu-v0.1.3
 ghcr.io/halmosb/docker-builder/python:3.14-gpu
 ```
 
@@ -220,9 +220,10 @@ password: ${{ secrets.GITHUB_TOKEN }}
 You can build images locally:
 
 ```bash
+python scripts/generate.py
 docker build \
   -f generated/Dockerfile.cpu.3.14 \
-  -t test-python:3.14 .
+  -t python:3.14-cpu .
 ```
 
 ---
