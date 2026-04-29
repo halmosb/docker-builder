@@ -14,6 +14,15 @@ RUN apt-get update && \
         build-essential \
         curl \
         xclip \
+        texlive-latex-base \
+        texlive-latex-recommended \
+        texlive-latex-extra \
+        texlive-bibtex-extra \
+        texlive-fonts-recommended \
+        texlive-fonts-extra \
+        dvipng \
+        cm-super \
+        python3-tk \
     && rm -rf /var/lib/apt/lists/*
 
 # Create user
