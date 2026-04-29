@@ -55,10 +55,9 @@ ENV HOME=/home/non_root
 # ----------------------------
 USER root
 
-RUN pip install --no-cache-dir --upgrade ipython matplotlib && \
+RUN pip install --no-cache-dir --upgrade ipython matplotlib PyQt6 && \
     pip install --no-cache-dir \
-        torch torchvision torchaudio \
-        --index-url {{ pytorch_gpu_index }}
+        torch torchvision torchaudio
 
 # ----------------------------
 # Git config (same as CPU)
