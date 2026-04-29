@@ -22,6 +22,19 @@ It is designed to:
 * ✅ Clean naming conventions for images
 
 ---
+## 🚀 Quickstart
+
+If you would like to use the build images:
+```bash
+sudo docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+  ghcr.io/halmosb/docker-builder/python:3.14-cpu
+```
+
+If you would like to get to know more about interactive usage of docker see: [interactive_usage.md](tutorial/interactive_useage.md).
+
+---
 
 ## 📁 Repository Structure
 
@@ -140,7 +153,7 @@ ghcr.io/halmosb/docker-builder/python:<python-version>-gpu
 Example:
 
 ```text
-ghcr.io/halmosb/docker-builder/python:3.14-cpu-v0.0.2
+ghcr.io/halmosb/docker-builder/python:3.14-cpu-v0.2.0
 ghcr.io/halmosb/docker-builder/python:3.14-gpu
 ```
 
@@ -220,9 +233,10 @@ password: ${{ secrets.GITHUB_TOKEN }}
 You can build images locally:
 
 ```bash
+python scripts/generate.py
 docker build \
   -f generated/Dockerfile.cpu.3.14 \
-  -t test-python:3.14 .
+  -t python:3.14-cpu .
 ```
 
 ---

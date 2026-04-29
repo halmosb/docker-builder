@@ -14,6 +14,18 @@ The goal is to:
 * Keep your host system clean
 
 ---
+## 🚀  0. Short
+
+Here are the most important commands to use:
+```bash
+sudo docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+  ghcr.io/halmosb/docker-builder/python:3.14-cpu
+```
+
+
+---
 
 ## 📦 1. Project Structure
 
@@ -35,13 +47,17 @@ my-project/
 
 Run the container with your project mounted:
 
-```
+```bash
 docker run -it --rm \
   -v $(pwd):/workspace \
-  -w /workspace \
-  ghcr.io/halmosb/docker-builder/python:3.14-cpu \
-  bash
+  ghcr.io/halmosb/docker-builder/python:3.14-cpu
 ```
+
+> [!NOTE]
+> When podman is used, additionally `--userns=keep-id` argument is needed.
+
+> [!NOTE]
+> If system clipboard is needed `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix` is also needed.
 
 ### Explanation
 
@@ -49,6 +65,8 @@ docker run -it --rm \
 * `--rm`: clean up container after exit
 * `-v $(pwd):/workspace`: mount your project
 * `-w /workspace`: set working directory
+* `--userns=keep-id`: keeps the user id (only needed for podman)
+* `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`: X11 forwarding forwarding for using system clipboard
 
 Now you are **inside the container**, but editing files on your host.
 
@@ -58,13 +76,13 @@ Now you are **inside the container**, but editing files on your host.
 
 Your base image does not include all libraries. Install what you need:
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
 Or manually:
 
-```
+```bash
 pip install numpy pandas matplotlib
 ```
 
@@ -76,19 +94,13 @@ pip install numpy pandas matplotlib
 
 ### Option A: Use a Docker Volume for pip cache
 
-```
-cd my-project
-
+```bash
 docker run -it --rm \
   -v $(pwd):/workspace \
   -v pip-cache:/root/.cache/pip \
   -w /workspace \
-  ghcr.io/halmosb/docker-builder/python:3.14-cpu \
-  bash
+  ghcr.io/halmosb/docker-builder/python:3.14-cpu
 ```
-
-> [!NOTE]
-> When podman is used, additionally `--userns=keep-id` argument is needed.
 
 ---
 
@@ -96,7 +108,7 @@ docker run -it --rm \
 
 Create a `Dockerfile`:
 
-```
+```Dockerfile
 FROM ghcr.io/halmosb/docker-builder/python:3.14-cpu
 
 WORKDIR /workspace
@@ -107,13 +119,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 Build:
 
-```
-docker build -t my-python-dev .
+```bash
+docker build -t python:3.14-cpu-test .
 ```
 
 Run:
 
-```
+```bash
 docker run -it --rm \
   -v $(pwd):/workspace \
   -w /workspace \
@@ -129,21 +141,14 @@ Inside the container:
 
 ### Run your code
 
-```
+```bash
 python src/main.py
 ```
 
 ### Run tests
 
-```
+```bash
 pytest
-```
-
-### Format / lint
-
-```
-black .
-flake8 .
 ```
 
 ---
@@ -232,9 +237,3 @@ You get:
 * No system pollution
 * Exact dependency control
 * Easy sharing across machines
-
----
-
-## 🔚
-
-This workflow is minimal, flexible, and scales from quick experiments to production-grade environments.
