@@ -4,9 +4,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-ARG USERNAME=dev
-ARG UID=1000
-ARG GID=1000
 LABEL org.opencontainers.image.description GPU Docker image with python {{ python_version }}.
 
 # ----------------------------
@@ -18,9 +15,18 @@ RUN apt-get update && \
         build-essential \
         curl \
         git \
-        vim \
-        wl-clipboard \
+        vim-gtk3 \
+        xclip \
         ca-certificates \
+        texlive-latex-base \
+        texlive-latex-recommended \
+        texlive-latex-extra \
+        texlive-bibtex-extra \
+        texlive-fonts-recommended \
+        texlive-fonts-extra \
+        dvipng \
+        cm-super \
+        python3-tk \
     && add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -29,61 +35,59 @@ RUN apt-get update && \
         python{{ python_version }}-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Make python3 point to chosen version
+# ----------------------------
+# Python setup
+# ----------------------------
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python{{ python_version }} 1
 
-# Ensure pip
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
-# Upgrade core Python tooling
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # ----------------------------
-# Create user
+# Create user (match CPU behavior)
 # ----------------------------
-RUN groupadd -g ${GID} ${USERNAME} && \
-    useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME}
+RUN useradd -m non_root
+ENV HOME=/home/non_root
 
 # ----------------------------
-# Workspace
+# Python packages
 # ----------------------------
-RUN mkdir -p /workspace && chown ${USERNAME}:${USERNAME} /workspace
-WORKDIR /workspace
+USER root
+
+RUN pip install --no-cache-dir --upgrade ipython matplotlib && \
+    pip install --no-cache-dir \
+        torch torchvision torchaudio \
+        --index-url {{ pytorch_gpu_index }}
 
 # ----------------------------
-# Python packages (GPU stack)
-# ----------------------------
-# NOTE: assumes CUDA-compatible PyTorch index is provided
-RUN pip install --no-cache-dir \
-        ipython matplotlib numpy scipy pandas \
-    && pip install --no-cache-dir \
-        torch torchvision torchaudio
-
-# ----------------------------
-# Switch to user
-# ----------------------------
-#USER ${USERNAME}
-ENV HOME=/home/${USERNAME}
-
-# ----------------------------
-# Git config
+# Git config (same as CPU)
 # ----------------------------
 RUN git config --global --add safe.directory /workspace && \
     git config --global core.editor "vim" && \
     git config --global alias.lga "log --all --graph --decorate --oneline" && \
-    git config --global alias.lg "log --graph --decorate --oneline"
+    git config --global alias.lg "log --graph --decorate --oneline" && \
+    git config --global alias.lgac "log --all --graph --decorate --pretty=format:'%C(yellow)%h%Creset %C(green)%cn%Creset %C(auto)%d%Creset %C(white)%s%Creset'" && \
+    git config --global alias.lgc "log --graph --decorate --pretty=format:'%C(yellow)%h%Creset %C(green)%cn%Creset %C(auto)%d%Creset %C(white)%s%Creset'"
 
 # ----------------------------
-# Vim setup
+# Vim setup (same as CPU)
 # ----------------------------
+USER non_root
+
 RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-COPY --chown=${USERNAME}:${USERNAME} templates/.vimrc_template ${HOME}/.vimrc
+COPY --chown=non_root:non_root templates/.vimrc_template ${HOME}/.vimrc
 
 RUN vim +PlugInstall +qall
 
 # ----------------------------
-# Default shell
+# Workspace
 # ----------------------------
-CMD ["python3"]
+WORKDIR /workspace
+
+# ----------------------------
+# Default shell (match CPU)
+# ----------------------------
+ENTRYPOINT ["/bin/bash"]
