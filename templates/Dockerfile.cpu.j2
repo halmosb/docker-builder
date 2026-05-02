@@ -13,7 +13,11 @@ RUN apt-get update && \
         git \
         build-essential \
         curl \
+        wget \
+        cmake \
         xclip \
+        python3-tk {% if include_latex %}\
+        texlive-full \
         texlive-latex-base \
         texlive-latex-recommended \
         texlive-latex-extra \
@@ -21,19 +25,25 @@ RUN apt-get update && \
         texlive-fonts-recommended \
         texlive-fonts-extra \
         dvipng \
-        cm-super \
-        python3-tk \
-    && rm -rf /var/lib/apt/lists/*
+        cm-super
+    {% endif %}
+RUN rm -rf /var/lib/apt/lists/*
 
+# Create user
+{% if not use_root %}
 # Create user
 RUN useradd -m non_root
 ENV HOME=/home/non_root
+{% else %}
+ENV HOME=/root
+{% endif %}
 
 # Using root for installation
 USER root
 
 # Python deps
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel ipython matplotlib && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    ipython matplotlib numpy scipy pandas pre-commit && \
     pip install --no-cache-dir \
     torch torchvision torchaudio \
     --index-url {{ pytorch_cpu_index }}
@@ -51,14 +61,20 @@ RUN git config --global --add safe.directory /workspace && \
 # ----------------------------
 # Vim setup
 # ----------------------------
+{% if not use_root %}
 USER non_root
+{% endif %}
 
 # Install vim-plug
 RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
         
 # Copy your vimrc template
+{% if use_root %}
+COPY templates/.vimrc_template ${HOME}/.vimrc
+{% else %}
 COPY --chown=non_root:non_root templates/.vimrc_template ${HOME}/.vimrc
+{% endif %}
 
 # Install plugins (headless)
 RUN vim +PlugInstall +qall

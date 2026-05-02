@@ -1,23 +1,22 @@
-FROM docker.io/nvidia/cuda:{{ cuda_version }}-cudnn-runtime-ubuntu{{ ubuntu }}
+FROM docker.io/nvidia/cuda:13.1.2-cudnn-runtime-ubuntu24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-LABEL org.opencontainers.image.description GPU Docker image with python {{ python_version }}.
+LABEL org.opencontainers.image.description Docker image with python {{ python_version }}.
 
-# ----------------------------
-# System dependencies
-# ----------------------------
+# System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        software-properties-common \
+        vim-gtk3 \
+        git \
         build-essential \
         curl \
-        git \
-        vim-gtk3 \
-        xclip \
-        ca-certificates \
+        wget \
+        cmake \
+        xclip {% if include_latex %}\
+        texlive-full \
         texlive-latex-base \
         texlive-latex-recommended \
         texlive-latex-extra \
@@ -25,42 +24,39 @@ RUN apt-get update && \
         texlive-fonts-recommended \
         texlive-fonts-extra \
         dvipng \
-        cm-super \
-        python3-tk \
-    && add-apt-repository ppa:deadsnakes/ppa && \
+        cm-super
+    {% endif %}
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y --no-install-recommends \
-        python{{ python_version }} \
-        python{{ python_version }}-dev \
-        python{{ python_version }}-venv \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y python{{ python_version }} python{{ python_version }}-venv python{{ python_version }}-dev python{{ python_version }}-tk
+# Install Python 3's pip (this step might fail in some versions, handle gracefully)
+RUN apt-get install -y python3-pip || true # try to install pip
 
-# ----------------------------
-# Python setup
-# ----------------------------
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python{{ python_version }} 1
+RUN rm -rf /var/lib/apt/lists/*
 
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
-
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# ----------------------------
-# Create user (match CPU behavior)
-# ----------------------------
+# Create user
+{% if not use_root %}
+# Create user
 RUN useradd -m non_root
 ENV HOME=/home/non_root
+{% else %}
+ENV HOME=/root
+{% endif %}
 
-# ----------------------------
-# Python packages
-# ----------------------------
+# Using root for installation
 USER root
 
-RUN pip install --no-cache-dir --upgrade ipython matplotlib PyQt6 && \
+# Python deps
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    ipython matplotlib numpy scipy pandas pre-commit && \
     pip install --no-cache-dir \
-        torch torchvision torchaudio
+    torch torchvision torchaudio
 
 # ----------------------------
-# Git config (same as CPU)
+# Git config
 # ----------------------------
 RUN git config --global --add safe.directory /workspace && \
     git config --global core.editor "vim" && \
@@ -68,25 +64,30 @@ RUN git config --global --add safe.directory /workspace && \
     git config --global alias.lg "log --graph --decorate --oneline" && \
     git config --global alias.lgac "log --all --graph --decorate --pretty=format:'%C(yellow)%h%Creset %C(green)%cn%Creset %C(auto)%d%Creset %C(white)%s%Creset'" && \
     git config --global alias.lgc "log --graph --decorate --pretty=format:'%C(yellow)%h%Creset %C(green)%cn%Creset %C(auto)%d%Creset %C(white)%s%Creset'"
-
+    
 # ----------------------------
-# Vim setup (same as CPU)
+# Vim setup
 # ----------------------------
+{% if not use_root %}
 USER non_root
+{% endif %}
 
+# Install vim-plug
 RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
+        
+# Copy your vimrc template
+{% if use_root %}
+COPY templates/.vimrc_template ${HOME}/.vimrc
+{% else %}
 COPY --chown=non_root:non_root templates/.vimrc_template ${HOME}/.vimrc
+{% endif %}
 
+# Install plugins (headless)
 RUN vim +PlugInstall +qall
 
-# ----------------------------
-# Workspace
-# ----------------------------
+# Set workdir
 WORKDIR /workspace
 
-# ----------------------------
-# Default shell (match CPU)
-# ----------------------------
+# Set initial command
 ENTRYPOINT ["/bin/bash"]
