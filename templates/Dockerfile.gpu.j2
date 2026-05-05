@@ -16,7 +16,7 @@ RUN apt-get update && \
         wget \
         cmake \
         xclip {% if include_latex %}\
-        texlive-full \
+        # texlive-full \
         texlive-latex-base \
         texlive-latex-recommended \
         texlive-latex-extra \
@@ -31,7 +31,7 @@ RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y python{{ python_version }} python{{ python_version }}-venv python{{ python_version }}-dev python{{ python_version }}-tk
+    apt-get install -y --fix-missing python{{ python_version }} python{{ python_version }}-venv python{{ python_version }}-dev python{{ python_version }}-tk
 # Install Python 3's pip (this step might fail in some versions, handle gracefully)
 RUN apt-get install -y python3-pip || true # try to install pip
 
