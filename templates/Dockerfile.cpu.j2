@@ -43,7 +43,7 @@ USER root
 
 # Python deps
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    ipython matplotlib numpy scipy pandas pre-commit && \
+    ipython matplotlib numpy scipy pandas pre-commit jupyter && \
     pip install --no-cache-dir \
     torch torchvision torchaudio \
     --index-url {{ pytorch_cpu_index }}
