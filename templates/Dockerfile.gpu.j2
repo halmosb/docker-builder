@@ -27,13 +27,22 @@ RUN apt-get update && \
         cm-super
     {% endif %}
 
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y --fix-missing python{{ python_version }} python{{ python_version }}-venv python{{ python_version }}-dev python{{ python_version }}-tk
-# Install Python 3's pip (this step might fail in some versions, handle gracefully)
-RUN apt-get install -y python3-pip || true # try to install pip
+# ----------------------------
+# Install micromamba
+# ----------------------------
+ENV MAMBA_ROOT_PREFIX=/opt/micromamba
+ENV PATH=$MAMBA_ROOT_PREFIX/bin:$PATH
+
+RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local/bin --strip-components=1 bin/micromamba
+
+# ----------------------------
+# Create Python environment
+# ----------------------------
+RUN micromamba create -y -n pyenv -c conda-forge python={{ python_version }} && \
+    micromamba clean --all --yes
+
+ENV PATH=$MAMBA_ROOT_PREFIX/envs/pyenv/bin:$PATH
+ENV CONDA_DEFAULT_ENV=pyenv
 
 RUN rm -rf /var/lib/apt/lists/*
 
