@@ -64,7 +64,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: generated/Dockerfile.${{ matrix.device-type }}.${{ needs.prepare.outputs.python_version }}
+          file: generated/Dockerfile.${{ needs.prepare.outputs.python_version }}.${{ matrix.device-type }}
           push: false
           load: false
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/cache
