@@ -1,4 +1,4 @@
-FROM docker.io/nvidia/cuda:13.1.2-cudnn-runtime-ubuntu24.04
+FROM docker.io/nvidia/cuda:{{ cuda_version }}-cudnn-runtime-ubuntu{{ ubuntu }}
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -46,16 +46,33 @@ ENV CONDA_DEFAULT_ENV=pyenv
 
 RUN rm -rf /var/lib/apt/lists/*
 
+ARG UID=1000
+ARG GID=1000
+ARG USERNAME=non_root
+
 # Create user
 {% if not use_root %}
 # Create user
-RUN useradd -m non_root
-ENV HOME=/home/non_root
+RUN set -eux; \
+    # If UID exists → rename that user
+    if id -u $UID >/dev/null 2>&1; then \
+        EXISTING_USER=$(id -nu $UID); \
+        usermod -l $USERNAME $EXISTING_USER; \
+        usermod -d /home/$USERNAME -m $USERNAME; \
+    else \
+        useradd -m -u $UID -g $GID -s /bin/bash $USERNAME; \
+    fi; \
+    # Ensure group exists
+    if ! getent group $GID >/dev/null; then \
+        groupadd -g $GID $USERNAME; \
+    fi
+
+ENV HOME=/home/$USERNAME
+USER $USERNAME
 {% else %}
 ENV HOME=/root
 {% endif %}
 
-# Using root for installation
 USER root
 
 # Python deps
@@ -77,9 +94,7 @@ RUN git config --global --add safe.directory /workspace && \
 # ----------------------------
 # Vim setup
 # ----------------------------
-{% if not use_root %}
-USER non_root
-{% endif %}
+USER $USERNAME
 
 # Install vim-plug
 RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
@@ -89,7 +104,7 @@ RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
 {% if use_root %}
 COPY templates/.vimrc_template ${HOME}/.vimrc
 {% else %}
-COPY --chown=non_root:non_root templates/.vimrc_template ${HOME}/.vimrc
+COPY templates/.vimrc_template ${HOME}/.vimrc
 {% endif %}
 
 # Install plugins (headless)
