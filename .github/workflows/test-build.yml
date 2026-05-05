@@ -55,7 +55,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Generate Dockerfiles
-        run: python scripts/generate.py
+        run: python docker-builder/generate.py --no-root --no-latex
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

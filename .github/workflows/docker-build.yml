@@ -60,7 +60,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - run: pip install -r requirements.txt
-      - run: python scripts/generate.py
+      - run: python docker-builder/generate.py --no-root --no-latex
 
       - uses: docker/setup-buildx-action@v3
 
