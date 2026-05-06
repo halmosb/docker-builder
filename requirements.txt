@@ -3,3 +3,4 @@ pyyaml
 pre-commit
 pytest
 coverage-badge
+pytest-cov

@@ -6,3 +6,5 @@ pytest
 ipython
 jupyter
 pre-commit
+coverage-badge
+pytest-cov
