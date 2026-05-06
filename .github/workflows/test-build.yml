@@ -52,7 +52,8 @@ jobs:
       - name: Install generator deps
         run: |
           python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -e .
+          docker-builder --no-root --no-latex
 
       - name: Generate Dockerfiles
         run: python docker-builder/generate.py --no-root --no-latex
