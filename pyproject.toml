@@ -27,3 +27,35 @@ file = ["requirements-docs.txt"]
 
 [project.scripts]
 docker-builder = "docker_builder.generate:main"
+
+# --------------------------------------------------
+# Black formatting
+# --------------------------------------------------
+
+[tool.black]
+
+line-length = 88
+target-version = ["py313"]
+
+# --------------------------------------------------
+# Ruff linter
+# --------------------------------------------------
+
+[tool.ruff]
+
+line-length = 88
+lint.select = ["E", "F", "I", "D"]
+lint.ignore = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# --------------------------------------------------
+# MyPy typing
+# --------------------------------------------------
+
+[tool.mypy]
+
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
