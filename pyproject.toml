@@ -29,6 +29,34 @@ file = ["requirements-docs.txt"]
 docker-builder = "docker_builder.generate:main"
 
 # --------------------------------------------------
+# Pytest configuration
+# --------------------------------------------------
+
+[tool.pytest.ini_options]
+
+testpaths = [
+    "tests"
+]
+
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--disable-warnings"
+]
+
+# --------------------------------------------------
+# Coverage configuration
+# --------------------------------------------------
+
+[tool.coverage.run]
+
+source = ["src/docker_builder"]
+
+omit = [
+    "tests/*"
+]
+
+# --------------------------------------------------
 # Black formatting
 # --------------------------------------------------
 

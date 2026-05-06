@@ -60,7 +60,7 @@ jobs:
             junit-report.xml
 
       - name: Deploy coverage badge
-        if: (matrix.python-version == '3.14') && (github.event_name == 'push') && (github.repository == 'dcintlab/NN-classifier-test')
+        if: (matrix.python-version == '3.14') && (github.event_name == 'push') && (github.repository == 'halmosb/docker-builder')
         run: |
             git config --global user.name "github-actions"
             git config --global user.email "github-actions@github.com"
