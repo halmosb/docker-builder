@@ -8,9 +8,9 @@ It features include:
 - vim with custom .vimrc file
 """
 
-import os
 import argparse
-from typing import Dict, Any
+import os
+from typing import Any, Dict, cast
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
@@ -18,10 +18,11 @@ from jinja2 import Environment, FileSystemLoader
 
 class DockerfileGenerator:
     """
-    Generator for CPU and GPU Dockerfiles based on Jinja2 templates and YAML configuration.
+    Generator for CPU and GPU Dockerfiles.
 
-    This class loads version configuration, prepares template contexts, and generates
-    Dockerfiles for multiple Python versions with configurable features such as root
+    This class loads version configuration, prepares
+    template contexts, and generates Dockerfiles for
+    multiple Python versions with configurable features such as root
     user support and LaTeX package installation.
 
     Parameters
@@ -32,6 +33,7 @@ class DockerfileGenerator:
         Whether to generate Dockerfiles that run as root user.
     include_latex : bool
         Whether to include LaTeX-related system dependencies.
+
     """
 
     def __init__(self, base_dir: str, use_root: bool, include_latex: bool) -> None:
@@ -42,9 +44,7 @@ class DockerfileGenerator:
         self.use_root: bool = use_root
         self.include_latex: bool = include_latex
 
-        self.env: Environment = Environment(
-            loader=FileSystemLoader(self.template_dir)
-        )
+        self.env: Environment = Environment(loader=FileSystemLoader(self.template_dir))
 
     def load_config(self) -> Dict[str, Any]:
         """
@@ -57,15 +57,17 @@ class DockerfileGenerator:
         """
         config_path = os.path.join(self.base_dir, "../config", "versions.yaml")
         with open(config_path, "r") as f:
-            return yaml.safe_load(f)
+            data = yaml.safe_load(f)
+
+        return cast(Dict[str, Any], data)
 
     def ensure_output_dir(self) -> None:
-        """
-        Ensure that the output directory exists.
-        """
+        """Ensure that the output directory exists."""
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def _build_context(self, cfg: Dict[str, Any], python_version: str) -> Dict[str, Any]:
+    def _build_context(
+        self, cfg: Dict[str, Any], python_version: str
+    ) -> Dict[str, Any]:
         """
         Construct template context for a given Python version.
 
@@ -116,7 +118,9 @@ class DockerfileGenerator:
                 f.write(gpu_template.render(**ctx))
 
             print(
-                f"Generated Python {py} | root={self.use_root} | latex={self.include_latex}"
+                f"Generated Python {py} | "
+                f"root={self.use_root} | "
+                f"latex={self.include_latex}"
             )
 
 
@@ -158,9 +162,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """
-    Entry point for CLI execution.
-    """
+    """Entry point for CLI execution."""
     args = parse_args()
 
     generator = DockerfileGenerator(

@@ -46,12 +46,12 @@ If you would like to get to know more about interactive usage of docker see: [in
 │   └── versions.yaml        # Defines Python versions
 ├── generated/               # Auto-generated Dockerfiles
 ├── scripts/
-│   ├── build.sh              # Building container locally   
-│   ├── clean.sh              # Cleaning local containers   
-│   ├── generate.py           # Generates the Dockerfiles  
+│   ├── build.sh              # Building container locally
+│   ├── clean.sh              # Cleaning local containers
+│   ├── generate.py           # Generates the Dockerfiles
 │   └── run.sh                # Runs a docker container locally
 ├── templates/               # Template Dockerfiles
-│   ├── Dockerfile.cpu.j2     # CPU Dockerfile template  
+│   ├── Dockerfile.cpu.j2     # CPU Dockerfile template
 │   └── Dockerfile.gpu.j2     # GPU Dockerfile template
 ├── .gitignore               # Not tracked files
 ├── LICENSE                  # License file
