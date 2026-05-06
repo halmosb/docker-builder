@@ -41,12 +41,19 @@ ENV HOME=/root
 # Using root for installation
 USER root
 
+{% if use_root %}
+COPY templates/requirements_template.txt ${HOME}/requirements_template.txt
+{% else %}
+COPY --chown=non_root:non_root templates/requirements_template.txt ${HOME}/requirements_template.txt
+{% endif %}
+
 # Python deps
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    ipython matplotlib numpy scipy pandas pre-commit jupyter && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
     torch torchvision torchaudio \
     --index-url {{ pytorch_cpu_index }}
+
+RUN pip install --no-cache-dir -r ${HOME}/requirements_template.txt
 
 # ----------------------------
 # Git config

@@ -1,0 +1,8 @@
+numpy
+matplotlib
+scipy
+pandas
+pytest
+ipython
+jupyter
+pre-commit
