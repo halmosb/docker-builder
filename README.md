@@ -1,5 +1,7 @@
 # 🐳 Python Docker Image Generator (GHCR + CI)
 
+![coverage](.badges/coverage.svg)
+
 This repository provides a **config-driven system to generate, build, and publish Python Docker images** automatically using **GitHub Actions** and **GitHub Container Registry (GHCR)**.
 
 It is designed to:
