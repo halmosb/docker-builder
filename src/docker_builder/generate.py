@@ -36,8 +36,8 @@ class DockerfileGenerator:
 
     def __init__(self, base_dir: str, use_root: bool, include_latex: bool) -> None:
         self.base_dir: str = base_dir
-        self.template_dir: str = os.path.join(base_dir, "templates")
-        self.output_dir: str = os.path.join(base_dir, "generated")
+        self.template_dir: str = os.path.join(base_dir, "../templates")
+        self.output_dir: str = os.path.join(base_dir, "../generated")
 
         self.use_root: bool = use_root
         self.include_latex: bool = include_latex
@@ -55,7 +55,7 @@ class DockerfileGenerator:
         Dict[str, Any]
             Parsed configuration dictionary.
         """
-        config_path = os.path.join(self.base_dir, "config", "versions.yaml")
+        config_path = os.path.join(self.base_dir, "../config", "versions.yaml")
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
 
