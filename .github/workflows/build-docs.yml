@@ -1,0 +1,44 @@
+name: "Sphinx: Render docs"
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - '.badges/**'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/halmosb/docker-builder/python:3.14-cpu
+      options: --user 0
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+
+    - name: Build docs
+      run: |
+        pip install -e .[docs]
+        mkdir -p docs/source/_static  # sphinx expects it
+        cd docs
+        make html # Generates autosummary
+        make html SPHINXOPTS="-W -T -v" # Treats warnings as errors
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-docs
+        path: docs/build/html/
+
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/build/html
