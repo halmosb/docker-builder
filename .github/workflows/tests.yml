@@ -17,7 +17,7 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/halmosb/docker-builder/python:${{ matrix.python-version }}-cpu
+      image: ghcr.io/halmosb/docker-builder/python:${{ matrix.python-version }}-cpu-v0.3.2
       options: --user 0
 
     strategy:

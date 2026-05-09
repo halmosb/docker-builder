@@ -19,7 +19,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/halmosb/docker-builder/python:3.14-cpu
+      image: ghcr.io/halmosb/docker-builder/python:3.14-cpu-v0.3.2
       options: --user 0
     permissions:
       contents: read
@@ -36,9 +36,10 @@ jobs:
           sphinx-build -b html docs docs/_build/html
           sphinx-build -W -T -b html docs docs/_build/html
 
-      - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: html-docs
           path: docs/_build/html
 
   deploy:
@@ -46,13 +47,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
 
     steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: html-docs
+          path: docs/_build/html
+
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
