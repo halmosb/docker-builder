@@ -2,17 +2,12 @@ name: Build and Deploy Docs
 
 on:
   push:
-    branches: ["**"]
-    paths:
-      - "docs/**"
-      - "src/**"
-      - "requirements-docs.txt"
+    branches:
+      - "**"
+    paths-ignore:
+      - '.badges/**'
   pull_request:
-    branches: [master]
-    paths:
-      - "docs/**"
-      - "src/**"
-      - "requirements-docs.txt"
+    branches: [ master ]
 
 # Serialize deployments; never cancel an in-progress deploy
 concurrency:
