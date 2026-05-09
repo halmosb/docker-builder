@@ -43,22 +43,37 @@ If you would like to get to know more about interactive usage of docker see: [in
 ```text
 .
 ├── .github/workflows/
-│   └── docker-build.yml     # CI pipeline
+│   ├── docker-build.yml      # CI pipeline (build & push on tag)
+│   ├── pre-commit.yml        # Pre-commit hook checks
+│   ├── test-build.yml        # CI pipeline (test Docker build)
+│   └── tests.yml             # Unit & integration tests
 ├── config/
-│   └── versions.yaml        # Defines Python versions
-├── generated/               # Auto-generated Dockerfiles
+│   └── versions.yaml         # Defines Python versions
+├── generated/                # Auto-generated Dockerfiles
 ├── scripts/
 │   ├── build.sh              # Building container locally
 │   ├── clean.sh              # Cleaning local containers
-│   ├── generate.py           # Generates the Dockerfiles
 │   └── run.sh                # Runs a docker container locally
-├── templates/               # Template Dockerfiles
+├── src/docker_builder/
+│   ├── generate.py           # Generates the Dockerfiles
+│   └── __init__.py
+├── templates/                # Template Dockerfiles
 │   ├── Dockerfile.cpu.j2     # CPU Dockerfile template
-│   └── Dockerfile.gpu.j2     # GPU Dockerfile template
-├── .gitignore               # Not tracked files
-├── LICENSE                  # License file
-├── README.md                # Usage info
-└── requirements.txt         # Requirements
+│   ├── Dockerfile.gpu.j2     # GPU Dockerfile template
+│   ├── requirements_template.txt
+│   └── .vimrc_template
+├── tests/
+│   ├── test_generate.py      # Tests for Dockerfile generation
+│   └── test_workflow.py      # Tests for CI workflow logic
+├── tutorial/
+│   └── interactive_useage.md # Interactive Docker usage guide
+├── .gitignore                # Not tracked files
+├── .pre-commit-config.yaml   # Pre-commit hook configuration
+├── LICENSE                   # License file
+├── pyproject.toml            # Package & tool configuration
+├── README.md                 # Usage info
+├── requirements-docs.txt     # Documentation dependencies
+└── requirements.txt          # Runtime dependencies
 ```
 
 ---
@@ -93,7 +108,7 @@ Run locally:
 
 ```bash
 pip install -r requirements.txt
-python scripts/generate.py
+python -m docker_builder.generate
 ```
 
 This will create:
@@ -235,9 +250,9 @@ password: ${{ secrets.GITHUB_TOKEN }}
 You can build images locally:
 
 ```bash
-python scripts/generate.py
+python -m docker_builder.generate
 docker build \
-  -f generated/Dockerfile.cpu.3.14 \
+  -f generated/Dockerfile.3.14.cpu \
   -t python:3.14-cpu .
 ```
 

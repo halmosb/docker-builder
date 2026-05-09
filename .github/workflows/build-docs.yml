@@ -1,0 +1,56 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - '.badges/**'
+  pull_request:
+    branches: [ master ]
+
+# Serialize deployments; never cancel an in-progress deploy
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/halmosb/docker-builder/python:3.14-cpu
+      options: --user 0
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install package and docs dependencies
+        run: pip install -e ".[docs]"
+
+      - name: Build HTML docs
+        run: sphinx-build -W -T -b html docs docs/_build/html
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

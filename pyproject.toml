@@ -13,17 +13,12 @@ authors = [
 ]
 license = { text = "GNUv3" }
 
-# Dependencies are dynamically loaded from requirements.txt
-dynamic = ["dependencies"]
+# Dependencies are dynamically loaded from requirements.txt / requirements-docs.txt
+dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
-
-[project.optional-dependencies]
-docs = []
-
-[tool.setuptools.dynamic.optional-dependencies.docs]
-file = ["requirements-docs.txt"]
+optional-dependencies.docs = { file = ["requirements-docs.txt"] }
 
 [project.scripts]
 docker-builder = "docker_builder.generate:main"
