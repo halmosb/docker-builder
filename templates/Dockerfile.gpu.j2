@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 LABEL \
     org.opencontainers.image.title="Python {{ python_version }} GPU (CUDA {{ cuda_version }})" \
-    org.opencontainers.image.description="GPU-enabled Python {{ python_version }} image on CUDA {{ cuda_version }} / Ubuntu {{ ubuntu }}. Python managed via micromamba. Includes PyTorch (CUDA build), scientific Python stack, custom Git aliases, and Vim configured with vim-plug plugins." \
+    org.opencontainers.image.description="GPU-enabled Python {{ python_version }} image on CUDA {{ cuda_version }} / Ubuntu {{ ubuntu }}. Python managed via micromamba. Includes PyTorch (CUDA build), scientific Python stack, custom git aliases, and Vim configured with vim-plug plugins." \
     org.opencontainers.image.licenses="GPL-3.0" \
     image.python.version="{{ python_version }}" \
     image.cuda.version="{{ cuda_version }}" \
