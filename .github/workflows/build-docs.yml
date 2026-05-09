@@ -1,44 +1,61 @@
-name: "Sphinx: Render docs"
+name: Build and Deploy Docs
 
 on:
   push:
-    branches:
-      - "**"
-    paths-ignore:
-      - '.badges/**'
+    branches: ["**"]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - "requirements-docs.txt"
   pull_request:
-    branches: [ master ]
+    branches: [master]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - "requirements-docs.txt"
+
+# Serialize deployments; never cancel an in-progress deploy
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/halmosb/docker-builder/python:3.14-cpu
       options: --user 0
     permissions:
-      contents: write
+      contents: read
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        persist-credentials: false
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Build docs
-      run: |
-        pip install -e .[docs]
-        mkdir -p docs/source/_static  # sphinx expects it
-        cd docs
-        make html # Generates autosummary
-        make html SPHINXOPTS="-W -T -v" # Treats warnings as errors
+      - name: Install package and docs dependencies
+        run: pip install -e ".[docs]"
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: html-docs
-        path: docs/build/html/
+      - name: Build HTML docs
+        run: sphinx-build -W -T -b html docs docs/_build/html
 
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/build/html
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
