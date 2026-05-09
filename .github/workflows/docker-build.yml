@@ -123,6 +123,7 @@ jobs:
           image-ref: ghcr.io/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
           format: sarif
           output: trivy-results.sarif
+          scanners: vuln
           vuln-type: os,library
           severity: CRITICAL,HIGH
           ignore-unfixed: true
