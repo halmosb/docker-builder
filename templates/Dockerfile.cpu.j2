@@ -62,6 +62,7 @@ mr        : :diffget //3 - accept theirs in a three-way merge conflict (vim-fugi
 
 # System deps
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         vim-gtk3 \
         git \
