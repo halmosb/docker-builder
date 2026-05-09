@@ -57,7 +57,7 @@ docker run -it --rm \
 > When podman is used, additionally `--userns=keep-id` argument is needed.
 
 > [!NOTE]
-> If system clipboard is needed `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix` is also needed.
+> If system clipboard is needed `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix` is also needed. Also on the host side `xhost +local:docker` command has to be executed.
 
 ### Explanation
 

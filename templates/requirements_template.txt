@@ -1,0 +1,10 @@
+numpy
+matplotlib
+scipy
+pandas
+pytest
+ipython
+jupyter
+pre-commit
+coverage-badge
+pytest-cov

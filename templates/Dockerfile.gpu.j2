@@ -4,20 +4,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-LABEL org.opencontainers.image.description GPU Docker image with python {{ python_version }}.
+LABEL org.opencontainers.image.description Docker image with python {{ python_version }}.
 
-# ----------------------------
-# System dependencies
-# ----------------------------
+# System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        software-properties-common \
+        vim-gtk3 \
+        git \
         build-essential \
         curl \
-        git \
-        vim-gtk3 \
-        xclip \
-        ca-certificates \
+        wget \
+        cmake \
+        xclip {% if include_latex %}\
+        # texlive-full \
         texlive-latex-base \
         texlive-latex-recommended \
         texlive-latex-extra \
@@ -25,42 +24,72 @@ RUN apt-get update && \
         texlive-fonts-recommended \
         texlive-fonts-extra \
         dvipng \
-        cm-super \
-        python3-tk \
-    && add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        python{{ python_version }} \
-        python{{ python_version }}-dev \
-        python{{ python_version }}-venv \
-    && rm -rf /var/lib/apt/lists/*
+        cm-super
+    {% endif %}
 
 # ----------------------------
-# Python setup
+# Install micromamba
 # ----------------------------
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python{{ python_version }} 1
+ENV MAMBA_ROOT_PREFIX=/opt/micromamba
+ENV PATH=$MAMBA_ROOT_PREFIX/bin:$PATH
 
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
-
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# ----------------------------
-# Create user (match CPU behavior)
-# ----------------------------
-RUN useradd -m non_root
-ENV HOME=/home/non_root
+RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local/bin --strip-components=1 bin/micromamba
 
 # ----------------------------
-# Python packages
+# Create Python environment
 # ----------------------------
+RUN micromamba create -y -n pyenv -c conda-forge python={{ python_version }} && \
+    micromamba clean --all --yes
+
+ENV PATH=$MAMBA_ROOT_PREFIX/envs/pyenv/bin:$PATH
+ENV CONDA_DEFAULT_ENV=pyenv
+
+RUN rm -rf /var/lib/apt/lists/*
+
+ARG UID=1000
+ARG GID=1000
+ARG USERNAME=non_root
+
+# Create user
+{% if not use_root %}
+# Create user
+RUN set -eux; \
+    # If UID exists → rename that user
+    if id -u $UID >/dev/null 2>&1; then \
+        EXISTING_USER=$(id -nu $UID); \
+        usermod -l $USERNAME $EXISTING_USER; \
+        usermod -d /home/$USERNAME -m $USERNAME; \
+    else \
+        useradd -m -u $UID -g $GID -s /bin/bash $USERNAME; \
+    fi; \
+    # Ensure group exists
+    if ! getent group $GID >/dev/null; then \
+        groupadd -g $GID $USERNAME; \
+    fi
+
+ENV HOME=/home/$USERNAME
+USER $USERNAME
+{% else %}
+ENV HOME=/root
+{% endif %}
+
 USER root
 
-RUN pip install --no-cache-dir --upgrade ipython matplotlib PyQt6 && \
+{% if use_root %}
+COPY templates/requirements_template.txt ${HOME}/requirements_template.txt
+{% else %}
+COPY --chown=non_root:non_root templates/requirements_template.txt ${HOME}/requirements_template.txt
+{% endif %}
+
+# Python deps
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
-        torch torchvision torchaudio
+    torch torchvision torchaudio
+
+RUN pip install --no-cache-dir -r ${HOME}/requirements_template.txt
 
 # ----------------------------
-# Git config (same as CPU)
+# Git config
 # ----------------------------
 RUN git config --global --add safe.directory /workspace && \
     git config --global core.editor "vim" && \
@@ -70,23 +99,26 @@ RUN git config --global --add safe.directory /workspace && \
     git config --global alias.lgc "log --graph --decorate --pretty=format:'%C(yellow)%h%Creset %C(green)%cn%Creset %C(auto)%d%Creset %C(white)%s%Creset'"
 
 # ----------------------------
-# Vim setup (same as CPU)
+# Vim setup
 # ----------------------------
-USER non_root
+USER $USERNAME
 
+# Install vim-plug
 RUN curl -fLo ${HOME}/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-COPY --chown=non_root:non_root templates/.vimrc_template ${HOME}/.vimrc
+# Copy your vimrc template
+{% if use_root %}
+COPY templates/.vimrc_template ${HOME}/.vimrc
+{% else %}
+COPY templates/.vimrc_template ${HOME}/.vimrc
+{% endif %}
 
+# Install plugins (headless)
 RUN vim +PlugInstall +qall
 
-# ----------------------------
-# Workspace
-# ----------------------------
+# Set workdir
 WORKDIR /workspace
 
-# ----------------------------
-# Default shell (match CPU)
-# ----------------------------
+# Set initial command
 ENTRYPOINT ["/bin/bash"]

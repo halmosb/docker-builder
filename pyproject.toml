@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docker-builder"
+version = "0.1.0"
+description = "CLI tool to generate CPU and GPU Dockerfiles from Jinja2 templates and YAML configuration."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Balázs Paszkál Halmos" }
+]
+license = { text = "GNUv3" }
+
+# Dependencies are dynamically loaded from requirements.txt
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[project.optional-dependencies]
+docs = []
+
+[tool.setuptools.dynamic.optional-dependencies.docs]
+file = ["requirements-docs.txt"]
+
+[project.scripts]
+docker-builder = "docker_builder.generate:main"
+
+# --------------------------------------------------
+# Pytest configuration
+# --------------------------------------------------
+
+[tool.pytest.ini_options]
+
+testpaths = [
+    "tests"
+]
+
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--disable-warnings"
+]
+
+# --------------------------------------------------
+# Coverage configuration
+# --------------------------------------------------
+
+[tool.coverage.run]
+
+source = ["src/docker_builder"]
+
+omit = [
+    "tests/*"
+]
+
+# --------------------------------------------------
+# Black formatting
+# --------------------------------------------------
+
+[tool.black]
+
+line-length = 88
+target-version = ["py313"]
+
+# --------------------------------------------------
+# Ruff linter
+# --------------------------------------------------
+
+[tool.ruff]
+
+line-length = 88
+lint.select = ["E", "F", "I", "D"]
+lint.ignore = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# --------------------------------------------------
+# MyPy typing
+# --------------------------------------------------
+
+[tool.mypy]
+
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true

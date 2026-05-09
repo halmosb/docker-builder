@@ -1,5 +1,7 @@
 # 🐳 Python Docker Image Generator (GHCR + CI)
 
+![coverage](.badges/coverage.svg)
+
 This repository provides a **config-driven system to generate, build, and publish Python Docker images** automatically using **GitHub Actions** and **GitHub Container Registry (GHCR)**.
 
 It is designed to:
@@ -46,12 +48,12 @@ If you would like to get to know more about interactive usage of docker see: [in
 │   └── versions.yaml        # Defines Python versions
 ├── generated/               # Auto-generated Dockerfiles
 ├── scripts/
-│   ├── build.sh              # Building container locally   
-│   ├── clean.sh              # Cleaning local containers   
-│   ├── generate.py           # Generates the Dockerfiles  
+│   ├── build.sh              # Building container locally
+│   ├── clean.sh              # Cleaning local containers
+│   ├── generate.py           # Generates the Dockerfiles
 │   └── run.sh                # Runs a docker container locally
 ├── templates/               # Template Dockerfiles
-│   ├── Dockerfile.cpu.j2     # CPU Dockerfile template  
+│   ├── Dockerfile.cpu.j2     # CPU Dockerfile template
 │   └── Dockerfile.gpu.j2     # GPU Dockerfile template
 ├── .gitignore               # Not tracked files
 ├── LICENSE                  # License file
@@ -281,3 +283,20 @@ Contributions are welcome. Typical improvements include:
 * New base image strategies
 * Performance optimizations
 * Additional configuration options
+
+Here is an example of adding a new feature to the code:
+
+```
+git checkout -b gpu-feature/your-awesome-feature
+# ... make changes ... git add .; git commit -m "Useful commit message"
+git push --set-upstream origin gpu-feature/your-awesome-feature
+xdg-open https://github.com/dcintlab/NN-classifier-test/pull/new/gpu-feature/your-awesome-feature
+# ... merge the branch to the master, make sure that the pipeline passes, delete the branch.
+git checkout master
+git pull
+git branch -d gpu-feature/your-awesome-feature
+git branch -d origin/gpu-feature/your-awesome-feature --remote
+```
+
+> [!NOTE]
+> If you name your new branch as `gpu-feature/...`, then the CI will run the tests for building a GPU image as well as only the CPU image.

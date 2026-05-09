@@ -59,8 +59,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: pip install -r requirements.txt
-      - run: python scripts/generate.py
+      - run: |
+          pip install -e .
+          docker-builder --no-root --no-latex
 
       - uses: docker/setup-buildx-action@v3
 
@@ -75,7 +76,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: generated/Dockerfile.${{ matrix.device-type }}.${{ matrix.python-version }}
+          file: generated/Dockerfile.${{ matrix.python-version }}.${{ matrix.device-type }}
           push: true
 
           tags: |
