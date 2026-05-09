@@ -91,9 +91,53 @@ jobs:
 
           provenance: false
 
+  scan:
+    needs: [build, prepare]
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ${{ fromJson(needs.prepare.outputs.versions) }}
+        device-type: [cpu, gpu]
+
+    permissions:
+      packages: read
+      security-events: write
+
+    env:
+      OWNER: ${{ needs.prepare.outputs.owner_lc }}
+      REPO: ${{ needs.prepare.outputs.repo_lc }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          format: sarif
+          output: trivy-results.sarif
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-${{ matrix.python-version }}-${{ matrix.device-type }}
+
   #  SINGLE WRITER JOB → avoids race + cleans old tags
   finalize:
-    needs: [build, prepare]
+    needs: [scan, prepare]
     runs-on: ubuntu-latest
 
     permissions:
