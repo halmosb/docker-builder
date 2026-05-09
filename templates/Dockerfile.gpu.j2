@@ -4,7 +4,62 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-LABEL org.opencontainers.image.description Docker image with python {{ python_version }}.
+LABEL \
+    org.opencontainers.image.title="Python {{ python_version }} GPU (CUDA {{ cuda_version }})" \
+    org.opencontainers.image.description="GPU-enabled Python {{ python_version }} image on CUDA {{ cuda_version }} / Ubuntu {{ ubuntu }}. Python managed via micromamba. Includes PyTorch (CUDA build), scientific Python stack, custom Git aliases, and Vim configured with vim-plug plugins." \
+    org.opencontainers.image.licenses="GPL-3.0" \
+    image.python.version="{{ python_version }}" \
+    image.cuda.version="{{ cuda_version }}" \
+    image.ubuntu.version="{{ ubuntu }}" \
+    image.python.manager="micromamba (conda-forge, env: pyenv)" \
+    image.user="{% if use_root %}root{% else %}non_root{% endif %}" \
+    image.system.packages="\
+vim-gtk3\n\
+git\n\
+build-essential\n\
+curl\n\
+wget\n\
+cmake\n\
+xclip\
+{% if include_latex %}\n\
+texlive-latex-base\n\
+texlive-latex-recommended\n\
+texlive-latex-extra\n\
+texlive-bibtex-extra\n\
+texlive-fonts-recommended\n\
+texlive-fonts-extra\n\
+dvipng\n\
+cm-super\
+{% endif %}" \
+    image.python.packages="\
+torch (CUDA build)\n\
+torchvision\n\
+torchaudio\n\
+numpy\n\
+matplotlib\n\
+scipy\n\
+pandas\n\
+ipython\n\
+jupyter\n\
+pytest\n\
+pytest-cov\n\
+pre-commit\n\
+coverage-badge" \
+    image.git.editor="vim" \
+    image.git.safe-directory="/workspace" \
+    image.git.aliases="\
+lga  -> git log --all --graph --decorate --oneline\n\
+lg   -> git log --graph --decorate --oneline\n\
+lgac -> git log --all --graph, colored: hash + author + refs + message\n\
+lgc  -> git log --graph, colored: hash + author + refs + message" \
+    image.vim.package-manager="vim-plug (https://github.com/junegunn/vim-plug)" \
+    image.vim.plugins="\
+vim-jukit   (luk400/vim-jukit):   Jupyter-like cell execution environment\n\
+vim-fugitive (tpope/vim-fugitive): Git integration and three-way diff viewer" \
+    image.vim.keybindings="\
+<leader>\\: run current cell and jump to next cell (vim-jukit)\n\
+ml        : :diffget //2 - accept ours   in a three-way merge conflict (vim-fugitive)\n\
+mr        : :diffget //3 - accept theirs in a three-way merge conflict (vim-fugitive)"
 
 # System deps
 RUN apt-get update && \
