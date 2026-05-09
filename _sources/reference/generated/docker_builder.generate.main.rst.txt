@@ -1,0 +1,6 @@
+﻿docker\_builder.generate.main
+=============================
+
+.. currentmodule:: docker_builder.generate
+
+.. autofunction:: main

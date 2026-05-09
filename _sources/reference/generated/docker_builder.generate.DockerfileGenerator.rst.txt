@@ -1,0 +1,25 @@
+﻿docker\_builder.generate.DockerfileGenerator
+============================================
+
+.. currentmodule:: docker_builder.generate
+
+.. autoclass:: DockerfileGenerator
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DockerfileGenerator.__init__
+      ~DockerfileGenerator.ensure_output_dir
+      ~DockerfileGenerator.generate
+      ~DockerfileGenerator.load_config
+   
+   
+
+   
+   
+   
