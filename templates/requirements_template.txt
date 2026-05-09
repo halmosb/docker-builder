@@ -1,5 +1,6 @@
-numpy
+numpy>2
 matplotlib
+pillow>=12.2.0
 scipy
 pandas
 pytest
