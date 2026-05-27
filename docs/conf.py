@@ -1,9 +1,8 @@
 """Configuration files for building the documentation."""
 
 import os
+import subprocess
 import sys
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as _pkg_version
 
 sys.path.insert(0, os.path.abspath("../src"))
 
@@ -16,8 +15,16 @@ copyright = "2026, Balázs Paszkál Halmos"
 author = "Balázs Paszkál Halmos"
 
 try:
-    release = _pkg_version("docker-builder")
-except PackageNotFoundError:
+    # git describe --tags --long always yields: {tag}-{distance}-g{hash}
+    raw = subprocess.check_output(
+        ["git", "describe", "--tags", "--long"],
+        stderr=subprocess.DEVNULL,
+        text=True,
+    ).strip()
+    tag, distance, hash_ = raw.rsplit("-", 2)
+    tag = tag.lstrip("v")
+    release = tag if distance == "0" else f"{tag}+{hash_}"
+except Exception:
     release = "unknown"
 
 # ---------------------------------------------------------------------------
@@ -28,7 +35,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
-    "sphinx.ext.intersphinx",
     "numpydoc",
 ]
 
@@ -49,14 +55,6 @@ numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
 numpydoc_attributes_as_param_list = True
 numpydoc_xref_param_type = True
-
-# ---------------------------------------------------------------------------
-# Intersphinx — cross-link to standard library docs
-# ---------------------------------------------------------------------------
-
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-}
 
 # ---------------------------------------------------------------------------
 # Theme — pydata-sphinx-theme (same as NumPy)
