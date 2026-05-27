@@ -78,6 +78,29 @@ If you would like to get to know more about interactive usage of docker see: [in
 
 ---
 
+## 🔧 Installation
+
+Clone the repository and install the package:
+
+```bash
+git clone https://github.com/halmosb/docker-builder.git
+cd docker-builder
+```
+
+**Runtime only** (Dockerfile generation):
+
+```bash
+pip install -e .
+```
+
+**With documentation dependencies:**
+
+```bash
+pip install -e ".[docs]"
+```
+
+---
+
 ## ⚙️ Configuration
 
 ### Python Versions
@@ -107,8 +130,8 @@ These versions will:
 Run locally:
 
 ```bash
-pip install -r requirements.txt
-python -m docker_builder.generate
+pip install -e .
+docker-builder
 ```
 
 This will create:
@@ -274,6 +297,32 @@ Modify `scripts/generate.py` to:
 
 * No multi-architecture images (yet)
 * No automatic cleanup of old tags
+
+---
+
+## 📖 Documentation
+
+The documentation is automatically built and published to GitHub Pages on every push to `master` or on a version tag push.
+
+To build the docs locally, first install the documentation dependencies:
+
+```bash
+pip install -e ".[docs]"
+```
+
+Then build with Make:
+
+```bash
+make html
+```
+
+The output is written to `docs/_build/html/`. Open `docs/_build/html/index.html` in a browser to view it.
+
+To remove the build artefacts:
+
+```bash
+make clean
+```
 
 ---
 
