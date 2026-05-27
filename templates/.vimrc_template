@@ -14,6 +14,17 @@ call plug#end()
 " ---------------------------------
 " General
 " ---------------------------------
+set tabstop=4
+set shiftwidth=4
+set expandtab          " Use spaces instead of tabs
+set hlsearch           " Highlight search results
+set incsearch          " Incremental search
+set ignorecase         " Case-insensitive search...
+set smartcase          " ...unless uppercase is used
+set autoindent
+set scrolloff=5        " Keep 5 lines visible above/below cursor
+set wildmenu           " Tab completion in command mode
+syntax on
 
 " Enable 24-bit true color in terminals that support it
 if exists('+termguicolors')
