@@ -14,16 +14,34 @@ call plug#end()
 " ---------------------------------
 " General
 " ---------------------------------
+set tabstop=4
+set shiftwidth=4
+set expandtab          " Use spaces instead of tabs
+set hlsearch           " Highlight search results
+set incsearch          " Incremental search
+set ignorecase         " Case-insensitive search...
+set smartcase          " ...unless uppercase is used
+set autoindent
+set scrolloff=5        " Keep 5 lines visible above/below cursor
+set wildmenu           " Tab completion in command mode
+syntax on
+
+" Enable 24-bit true color in terminals that support it
+if exists('+termguicolors')
+    let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+    let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+    set termguicolors
+endif
 
 " ---------------------------------
 " Fugitive
 " ---------------------------------
 
 " Diff colors
-highlight DiffAdd    ctermfg=NONE ctermbg=green guibg=#a6e3a1
-highlight DiffDelete ctermfg=NONE ctermbg=red   guibg=#f38ba8
+highlight DiffAdd    ctermfg=NONE ctermbg=green  guibg=#a6e3a1
+highlight DiffDelete ctermfg=NONE ctermbg=red    guibg=#f38ba8
 highlight DiffChange ctermfg=NONE ctermbg=yellow guibg=#f9e2af
-highlight DiffText   ctermfg=NONE ctermbg=blue  guibg=#89b4fa
+highlight DiffText   ctermfg=NONE ctermbg=blue   guibg=#89b4fa
 
 " Fugitive: \ml \mr in resolving git conflicts
 nnoremap <silent> ml :diffget //2<CR>
@@ -35,6 +53,14 @@ nnoremap <silent> mr :diffget //3<CR>
 
 " Default directory
 let g:jukit_dir = expand('~/.jukit')
+
+" Only show output in the IPython terminal, not the sent code
+let g:jukit_in_style = 5
+
+" Cell separator and text cell colors: override plugin defaults so cterm
+" fallback colors are visible when termguicolors is not available
+highlight jukit_cellmarker_colors  guifg=#1d615a guibg=#1d615a ctermbg=23 ctermfg=23
+highlight jukit_textcell_bg_colors guibg=#131628               ctermbg=236
 
 " Run and jump to next cell with \\
 nnoremap <leader>\ :call jukit#send#section(1)<CR>

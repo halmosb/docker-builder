@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "**"
+    tags:
+      - "v*"
     paths-ignore:
       - '.badges/**'
   pull_request:
@@ -27,6 +29,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mark workspace as git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Install package and docs dependencies
         run: pip install -e ".[docs]"
@@ -45,7 +52,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
     permissions:
       contents: write
 
