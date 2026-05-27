@@ -1,10 +1,9 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "docker-builder"
-version = "0.1.0"
 description = "CLI tool to generate CPU and GPU Dockerfiles from Jinja2 templates and YAML configuration."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,8 +12,12 @@ authors = [
 ]
 license = { text = "GNUv3" }
 
+# Version is derived from the latest git tag via setuptools-scm
 # Dependencies are dynamically loaded from requirements.txt / requirements-docs.txt
-dynamic = ["dependencies", "optional-dependencies"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[tool.setuptools_scm]
+version_scheme = "no-guess-dev"
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

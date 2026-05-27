@@ -2,6 +2,7 @@
 
 import os
 import sys
+from importlib.metadata import PackageNotFoundError, version
 
 sys.path.insert(0, os.path.abspath("../src"))
 
@@ -12,7 +13,11 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "docker-builder"
 copyright = "2026, Balázs Paszkál Halmos"
 author = "Balázs Paszkál Halmos"
-release = "0.1.0"
+
+try:
+    release = version("docker-builder")
+except PackageNotFoundError:
+    release = "unknown"
 
 # ---------------------------------------------------------------------------
 # Extensions
