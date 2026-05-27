@@ -1,0 +1,4 @@
+# CVE-2025-47273: Path Traversal in setuptools PackageIndex
+# Fixed version (78.1.1) is incompatible with Python 3.13.
+# Re-evaluate when a compatible fix is released.
+CVE-2025-47273
