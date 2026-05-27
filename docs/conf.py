@@ -2,7 +2,8 @@
 
 import os
 import sys
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 sys.path.insert(0, os.path.abspath("../src"))
 
@@ -15,7 +16,7 @@ copyright = "2026, Balázs Paszkál Halmos"
 author = "Balázs Paszkál Halmos"
 
 try:
-    release = version("docker-builder")
+    release = _pkg_version("docker-builder")
 except PackageNotFoundError:
     release = "unknown"
 
