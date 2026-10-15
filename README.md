@@ -1,7 +1,7 @@
 # 🐳 Python Docker Image Generator (GHCR + CI)
 
 [![Python versions](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalmosb%2Fdocker-builder%2Fmaster%2Fconfig%2Fversions.yaml&query=%24.python_versions&label=python&logo=python&logoColor=white&color=3776AB)](config/versions.yaml)
-[![Release](https://img.shields.io/github/v/tag/halmosb/docker-builder?label=release&sort=semver)](https://github.com/halmosb/docker-builder/tags)
+[![Release](https://img.shields.io/github/v/tag/halmosb/docker-builder?label=release&sort=semver)](https://github.com/halmosb/docker-builder/releases)
 [![Docs](https://github.com/halmosb/docker-builder/actions/workflows/build-docs.yml/badge.svg?branch=master)](https://halmosb.github.io/docker-builder/)
 ![coverage](.badges/coverage.svg)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -38,7 +38,7 @@ If you would like to use the build images:
 sudo docker run -it --rm \
   -v $(pwd):/workspace \
   -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
-  ghcr.io/halmosb/docker-builder/python:3.14-cpu
+  ghcr.io/halmosb/docker-builder/python:3.15-cpu
 ```
 
 If you would like to get to know more about interactive usage of docker see: [interactive_usage.md](tutorial/interactive_useage.md).
@@ -342,7 +342,7 @@ make clean
 
 ## 📄 License
 
-GNUv3.
+[GNUv3](LICENSE).
 
 ---
 
