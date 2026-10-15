@@ -1,6 +1,8 @@
 numpy>2
 matplotlib
 pillow>=12.2.0
+msgpack>=1.2.1
+urllib3>=2.8.0
 scipy
 pandas
 pytest
