@@ -27,6 +27,7 @@ cuda:
 
 pytorch:
   cpu_index: "https://download.pytorch.org/whl/cpu"
+  gpu_index: "https://download.pytorch.org/whl/cu132"
 """
 
 
@@ -77,7 +78,7 @@ class TestDockerfileGenerator(unittest.TestCase):
         """Test context construction."""
         cfg = {
             "cuda": {"version": "12.0", "ubuntu": "22.04"},
-            "pytorch": {"cpu_index": "cpu"},
+            "pytorch": {"cpu_index": "cpu", "gpu_index": "cu132"},
         }
 
         ctx = self.generator._build_context(cfg, "3.10")
@@ -85,6 +86,7 @@ class TestDockerfileGenerator(unittest.TestCase):
         self.assertEqual(ctx["python_version"], "3.10")
         self.assertEqual(ctx["cuda_version"], "12.0")
         self.assertEqual(ctx["ubuntu"], "22.04")
+        self.assertEqual(ctx["pytorch_gpu_index"], "cu132")
         self.assertTrue(ctx["use_root"])
         self.assertFalse(ctx["include_latex"])
 
@@ -95,7 +97,7 @@ class TestDockerfileGenerator(unittest.TestCase):
         cfg = {
             "python_versions": ["3.10", "3.11"],
             "cuda": {"version": "12.0", "ubuntu": "22.04"},
-            "pytorch": {"cpu_index": "cpu"},
+            "pytorch": {"cpu_index": "cpu", "gpu_index": "cu132"},
         }
 
         # Mock templates

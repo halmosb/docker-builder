@@ -88,6 +88,7 @@ class DockerfileGenerator:
             "cuda_version": cfg["cuda"]["version"],
             "ubuntu": cfg["cuda"]["ubuntu"],
             "pytorch_cpu_index": cfg["pytorch"]["cpu_index"],
+            "pytorch_gpu_index": cfg["pytorch"]["gpu_index"],
             "use_root": self.use_root,
             "include_latex": self.include_latex,
         }

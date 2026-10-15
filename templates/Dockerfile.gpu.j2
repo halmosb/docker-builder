@@ -33,7 +33,7 @@ dvipng\n\
 cm-super\
 {% endif %}" \
     image.python.packages="\
-torch (CUDA build)\n\
+torch (CUDA build, index: {{ pytorch_gpu_index }})\n\
 torchvision\n\
 numpy\n\
 matplotlib\n\
@@ -141,7 +141,8 @@ COPY --chown=non_root:non_root templates/requirements_template.txt ${HOME}/requi
 # Python deps
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
-    torch torchvision
+    torch torchvision \
+    --index-url {{ pytorch_gpu_index }}
 
 RUN pip install --no-cache-dir -r ${HOME}/requirements_template.txt
 
