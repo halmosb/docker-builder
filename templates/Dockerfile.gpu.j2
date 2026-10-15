@@ -35,7 +35,6 @@ cm-super\
     image.python.packages="\
 torch (CUDA build)\n\
 torchvision\n\
-torchaudio\n\
 numpy\n\
 matplotlib\n\
 scipy\n\
@@ -142,7 +141,7 @@ COPY --chown=non_root:non_root templates/requirements_template.txt ${HOME}/requi
 # Python deps
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
-    torch torchvision torchaudio
+    torch torchvision
 
 RUN pip install --no-cache-dir -r ${HOME}/requirements_template.txt
 
