@@ -111,17 +111,24 @@ ARG USERNAME=non_root
 {% if not use_root %}
 # Create user
 RUN set -eux; \
+    # If GID exists (e.g. 'ubuntu' in the CUDA base image) → rename that group
+    if getent group $GID >/dev/null; then \
+        EXISTING_GROUP=$(getent group $GID | cut -d: -f1); \
+        if [ "$EXISTING_GROUP" != "$USERNAME" ]; then \
+            groupmod -n $USERNAME $EXISTING_GROUP; \
+        fi; \
+    else \
+        groupadd -g $GID $USERNAME; \
+    fi; \
     # If UID exists → rename that user
     if id -u $UID >/dev/null 2>&1; then \
         EXISTING_USER=$(id -nu $UID); \
-        usermod -l $USERNAME $EXISTING_USER; \
-        usermod -d /home/$USERNAME -m $USERNAME; \
+        if [ "$EXISTING_USER" != "$USERNAME" ]; then \
+            usermod -l $USERNAME -d /home/$USERNAME -m $EXISTING_USER; \
+        fi; \
+        usermod -g $GID $USERNAME; \
     else \
         useradd -m -u $UID -g $GID -s /bin/bash $USERNAME; \
-    fi; \
-    # Ensure group exists
-    if ! getent group $GID >/dev/null; then \
-        groupadd -g $GID $USERNAME; \
     fi
 
 ENV HOME=/home/$USERNAME
