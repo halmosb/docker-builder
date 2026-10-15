@@ -156,6 +156,19 @@ RUN git config --global --add safe.directory /workspace && \
     git config --global alias.lgc "log --graph --decorate --pretty=format:'%C(yellow)%h%Creset %C(green)%cn%Creset %C(auto)%d%Creset %C(white)%s%Creset'"
 
 # ----------------------------
+# Pre-commit hook cache
+# ----------------------------
+# Pre-install the hook environments of this repo's .pre-commit-config.yaml,
+# so pre-commit runs inside this image do not have to set them up again.
+ENV PRE_COMMIT_HOME=/opt/pre-commit-cache
+COPY .pre-commit-config.yaml /tmp/pre-commit/.pre-commit-config.yaml
+RUN cd /tmp/pre-commit && \
+    git init -q && \
+    pre-commit install-hooks && \
+    cd / && rm -rf /tmp/pre-commit{% if not use_root %} && \
+    chown -R non_root:non_root ${PRE_COMMIT_HOME}{% endif %}
+
+# ----------------------------
 # Vim setup
 # ----------------------------
 USER $USERNAME

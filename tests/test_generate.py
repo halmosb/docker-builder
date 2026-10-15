@@ -1,8 +1,11 @@
 """Tests for the main script."""
 
 import os
+import runpy
+import shutil
 import tempfile
 import unittest
+import warnings
 from unittest.mock import MagicMock, mock_open, patch
 
 from docker_builder.generate import (
@@ -10,6 +13,21 @@ from docker_builder.generate import (
     main,
     parse_args,
 )
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+TEST_CONFIG = """\
+python_versions:
+  - "3.12"
+  - "3.13"
+
+cuda:
+  version: "13.2.1"
+  ubuntu: "24.04"
+
+pytorch:
+  cpu_index: "https://download.pytorch.org/whl/cpu"
+"""
 
 
 class TestDockerfileGenerator(unittest.TestCase):
@@ -139,6 +157,101 @@ class TestCLI(unittest.TestCase):
 
         mock_gen_cls.assert_called_once()
         mock_instance.generate.assert_called_once()
+
+
+class TestRealTemplates(unittest.TestCase):
+    """Render the real templates into a temporary project tree."""
+
+    def setUp(self) -> None:
+        """Create a temporary project with config, templates and a src dir."""
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        root = self.tmp_dir.name
+
+        shutil.copytree(
+            os.path.join(REPO_ROOT, "templates"), os.path.join(root, "templates")
+        )
+        os.makedirs(os.path.join(root, "config"))
+        with open(os.path.join(root, "config", "versions.yaml"), "w") as f:
+            f.write(TEST_CONFIG)
+
+        self.base_dir = os.path.join(root, "src")
+        os.makedirs(self.base_dir)
+        self.output_dir = os.path.join(root, "generated")
+
+    def tearDown(self) -> None:
+        """Cleanup temp directory."""
+        self.tmp_dir.cleanup()
+
+    def _read(self, name: str) -> str:
+        with open(os.path.join(self.output_dir, name)) as f:
+            return f.read()
+
+    def _generate(self, use_root: bool, include_latex: bool) -> None:
+        generator = DockerfileGenerator(
+            base_dir=self.base_dir,
+            use_root=use_root,
+            include_latex=include_latex,
+        )
+        with patch("builtins.print"):
+            generator.generate()
+
+    def test_generates_all_files(self) -> None:
+        """Test that a CPU and GPU Dockerfile is written per Python version."""
+        self._generate(use_root=False, include_latex=False)
+
+        self.assertEqual(
+            sorted(os.listdir(self.output_dir)),
+            [
+                "Dockerfile.3.12.cpu",
+                "Dockerfile.3.12.gpu",
+                "Dockerfile.3.13.cpu",
+                "Dockerfile.3.13.gpu",
+            ],
+        )
+        self.assertIn("FROM python:3.12-slim", self._read("Dockerfile.3.12.cpu"))
+        self.assertIn(
+            "FROM docker.io/nvidia/cuda:13.2.1-cudnn-runtime-ubuntu24.04",
+            self._read("Dockerfile.3.13.gpu"),
+        )
+
+    def test_non_root_without_latex(self) -> None:
+        """Test the non-root variant without LaTeX packages."""
+        self._generate(use_root=False, include_latex=False)
+
+        for name in ("Dockerfile.3.12.cpu", "Dockerfile.3.12.gpu"):
+            content = self._read(name)
+            self.assertIn("ENV PRE_COMMIT_HOME=/opt/pre-commit-cache", content)
+            self.assertIn("pre-commit install-hooks", content)
+            self.assertIn("chown -R non_root:non_root ${PRE_COMMIT_HOME}", content)
+            self.assertNotIn("ENV HOME=/root", content)
+
+        self.assertNotIn("texlive-latex-base", self._read("Dockerfile.3.12.cpu"))
+
+    def test_root_with_latex(self) -> None:
+        """Test the root variant with LaTeX packages."""
+        self._generate(use_root=True, include_latex=True)
+
+        for name in ("Dockerfile.3.12.cpu", "Dockerfile.3.12.gpu"):
+            content = self._read(name)
+            self.assertIn("ENV HOME=/root", content)
+            self.assertIn("pre-commit install-hooks", content)
+            self.assertNotIn("chown -R non_root:non_root ${PRE_COMMIT_HOME}", content)
+
+        self.assertIn("texlive-latex-base", self._read("Dockerfile.3.12.cpu"))
+
+    def test_module_entrypoint(self) -> None:
+        """Test running the module as ``__main__`` in-process."""
+        argv = ["prog", "--no-root", "--base-dir", self.base_dir]
+        with (
+            patch("sys.argv", argv),
+            patch("builtins.print"),
+            warnings.catch_warnings(),
+        ):
+            # The module is already imported by this test file.
+            warnings.simplefilter("ignore", RuntimeWarning)
+            runpy.run_module("docker_builder.generate", run_name="__main__")
+
+        self.assertEqual(len(os.listdir(self.output_dir)), 4)
 
 
 if __name__ == "__main__":
