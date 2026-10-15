@@ -57,6 +57,13 @@ jobs:
       - name: Generate Dockerfiles
         run: docker-builder --no-root --no-latex
 
+      - name: Save generated Dockerfile
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dockerfile.${{ needs.prepare.outputs.python_version }}.${{ matrix.device-type }}
+          path: generated/Dockerfile.${{ needs.prepare.outputs.python_version }}.${{ matrix.device-type }}
+          if-no-files-found: error
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
