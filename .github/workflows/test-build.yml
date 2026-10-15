@@ -15,7 +15,7 @@ jobs:
       device_matrix: ${{ steps.set_matrix.outputs.device_matrix }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Python deps
         run: |
@@ -47,7 +47,7 @@ jobs:
         device-type: ${{ fromJson(needs.prepare.outputs.device_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install generator deps
         run: |
@@ -58,17 +58,17 @@ jobs:
         run: docker-builder --no-root --no-latex
 
       - name: Save generated Dockerfile
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Dockerfile.${{ needs.prepare.outputs.python_version }}.${{ matrix.device-type }}
           path: generated/Dockerfile.${{ needs.prepare.outputs.python_version }}.${{ matrix.device-type }}
           if-no-files-found: error
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Build (no push)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: generated/Dockerfile.${{ needs.prepare.outputs.python_version }}.${{ matrix.device-type }}
@@ -79,7 +79,7 @@ jobs:
           cache-to: type=inline
 
       - name: Print Trivy findings (debug)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: test-image:${{ matrix.device-type }}
           format: table
@@ -91,7 +91,7 @@ jobs:
           exit-code: '0'
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: test-image:${{ matrix.device-type }}
           format: sarif
@@ -106,7 +106,7 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: trivy-results.sarif
           category: trivy-${{ needs.prepare.outputs.python_version }}-${{ matrix.device-type }}
