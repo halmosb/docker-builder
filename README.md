@@ -1,6 +1,13 @@
 # 🐳 Python Docker Image Generator (GHCR + CI)
 
+[![Python versions](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalmosb%2Fdocker-builder%2Fmaster%2Fconfig%2Fversions.yaml&query=%24.python_versions&label=python&logo=python&logoColor=white&color=3776AB)](config/versions.yaml)
+[![Release](https://img.shields.io/github/v/tag/halmosb/docker-builder?label=release&sort=semver)](https://github.com/halmosb/docker-builder/tags)
+[![Docs](https://github.com/halmosb/docker-builder/actions/workflows/build-docs.yml/badge.svg?branch=master)](https://halmosb.github.io/docker-builder/)
 ![coverage](.badges/coverage.svg)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Trivy](https://img.shields.io/badge/scanned%20with-Trivy-1904DA?logo=aqua&logoColor=white)](https://github.com/aquasecurity/trivy)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 
 This repository provides a **config-driven system to generate, build, and publish Python Docker images** automatically using **GitHub Actions** and **GitHub Container Registry (GHCR)**.
 
@@ -110,11 +117,10 @@ Edit:
 ```yaml
 # config/versions.yaml
 python_versions:
-  - "3.10"
-  - "3.11"
   - "3.12"
   - "3.13"
   - "3.14"
+  - "3.15"
 ```
 
 These versions will:
