@@ -10,3 +10,4 @@ cuda:
 
 pytorch:
   cpu_index: "https://download.pytorch.org/whl/cpu"
+  gpu_index: "https://download.pytorch.org/whl/cu132"

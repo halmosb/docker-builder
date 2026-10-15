@@ -6,6 +6,7 @@ on:
       - "**"
     tags-ignore:
       - "v*"
+  pull_request:
 
 jobs:
   prepare:
@@ -16,6 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Install Python deps
         run: |
@@ -28,10 +31,52 @@ jobs:
           VERSION=$(python3 -c "import yaml; cfg = yaml.safe_load(open('config/versions.yaml')); print(cfg['python_versions'][-1])")
           echo "python_version=$VERSION" >> $GITHUB_OUTPUT
 
+      # The GPU image is built when:
+      #   - the run is for a pull request,
+      #   - the branch is named gpu-feature*, or
+      #   - a push changes any of the GPU image's configuration files below.
       - name: Set device matrix
         id: set_matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if [[ "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" == gpu-feature* ]]; then
+          BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          GPU_PATHS=(
+            templates/Dockerfile.gpu.j2
+            config/versions.yaml
+            src/docker_builder/generate.py
+            .github/workflows/test-build.yml
+          )
+
+          BUILD_GPU=false
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            echo "Pull request: building GPU image"
+            BUILD_GPU=true
+          elif [[ "$BRANCH" == gpu-feature* ]]; then
+            echo "Branch $BRANCH: building GPU image"
+            BUILD_GPU=true
+          else
+            # Compare against the previous push; for new branches or force
+            # pushes (previous commit unknown), compare against the default branch.
+            if [[ "$BEFORE_SHA" =~ ^0*$ ]] || ! git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+              BASE=$(git merge-base "origin/$DEFAULT_BRANCH" HEAD || true)
+            else
+              BASE="$BEFORE_SHA"
+            fi
+
+            if [[ -z "$BASE" ]]; then
+              echo "Could not determine base commit: building GPU image"
+              BUILD_GPU=true
+            elif ! git diff --quiet "$BASE" HEAD -- "${GPU_PATHS[@]}"; then
+              echo "GPU configuration changed since $BASE:"
+              git diff --name-only "$BASE" HEAD -- "${GPU_PATHS[@]}"
+              BUILD_GPU=true
+            fi
+          fi
+
+          if [[ "$BUILD_GPU" == "true" ]]; then
             echo 'device_matrix=["cpu","gpu"]' >> $GITHUB_OUTPUT
           else
             echo 'device_matrix=["cpu"]' >> $GITHUB_OUTPUT
