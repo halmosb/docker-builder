@@ -92,6 +92,7 @@ jobs:
           scanners: vuln
           vuln-type: os,library
           severity: CRITICAL,HIGH
+          limit-severities-for-sarif: true
           ignore-unfixed: true
           trivyignores: .trivyignore
           exit-code: '1'
