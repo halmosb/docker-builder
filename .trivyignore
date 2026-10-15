@@ -2,3 +2,10 @@
 # Fixed version (78.1.1) is incompatible with Python 3.13.
 # Re-evaluate when a compatible fix is released.
 CVE-2025-47273
+
+# Vulnerable msgpack 1.1.2 and urllib3 2.7.0 vendored inside pip 26.2.1
+# (pip/_vendor). Top-level installs are pinned to fixed versions in
+# requirements_template.txt. Re-evaluate when a pip release bumps them.
+GHSA-6v7p-g79w-8964
+CVE-2026-97687
+CVE-2026-97689
