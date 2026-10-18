@@ -197,6 +197,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      actions: write
       contents: write
       packages: write
 
@@ -241,6 +242,10 @@ jobs:
             -f ref="refs/tags/${TAG}" \
             -f sha="${GITHUB_SHA}"
           echo "Created tag ${TAG} at ${GITHUB_SHA}"
+
+      # Rebuild the docs on the tag so they show the release version
+      - name: Deploy docs for the release
+        run: gh workflow run build-docs.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
 
       # Moving the floating tags never needs them deleted by hand. A rerun after
       # a failed release re-pushes the versioned tags, leaving the previous
