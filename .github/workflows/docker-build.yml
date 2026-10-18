@@ -1,9 +1,20 @@
 name: Build and Push Docker Images
 
+# Run manually from the Actions tab (or `gh workflow run docker-build.yml`).
+# The git tag is created only after every image has been built and scanned,
+# so a failed run never leaves a tag behind; fix the problem and run it again.
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to create (e.g. v0.3.5). Leave empty to bump the patch number of the latest tag."
+        required: false
+        default: ""
+
+# Never run two releases at the same time
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -13,29 +24,67 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       versions: ${{ steps.get_versions.outputs.versions }}
+      latest_version: ${{ steps.get_versions.outputs.latest_version }}
       owner_lc: ${{ steps.vars.outputs.owner_lc }}
       repo_lc: ${{ steps.vars.outputs.repo_lc }}
       tag: ${{ steps.tag.outputs.tag }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - id: vars
         run: |
           echo "owner_lc=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "repo_lc=$(echo '${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-      - id: tag
+      - name: Determine release tag
+        id: tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          if [[ "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]]; then
+            echo "::error::Releases must be run from $DEFAULT_BRANCH, not $GITHUB_REF_NAME"
+            exit 1
+          fi
 
-      - run: |
+          TAG="$INPUT_VERSION"
+          if [[ -z "$TAG" ]]; then
+            LAST=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+            if [[ -z "$LAST" ]]; then
+              TAG="v0.1.0"
+            else
+              IFS=. read -r MAJOR MINOR PATCH <<< "${LAST#v}"
+              TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            fi
+          fi
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid release tag '$TAG' (expected vMAJOR.MINOR.PATCH)"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
+
+          echo "Releasing $TAG from $GITHUB_SHA"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Install Python deps
+        run: |
+          python3 -m pip install --upgrade pip
           pip install pyyaml
 
-      - id: get_versions
+      - name: Get Python versions from config
+        id: get_versions
         run: |
           VERSIONS=$(python3 -c "import yaml,json;print(json.dumps(yaml.safe_load(open('config/versions.yaml'))['python_versions']))")
+          LATEST=$(python3 -c "import yaml; cfg = yaml.safe_load(open('config/versions.yaml')); print(cfg['python_versions'][-1])")
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
+          echo "latest_version=$LATEST" >> $GITHUB_OUTPUT
 
 
   build:
@@ -43,6 +92,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: true
       matrix:
         python-version: ${{ fromJson(needs.prepare.outputs.versions) }}
         device-type: [cpu, gpu]
@@ -50,18 +100,24 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
 
     env:
       OWNER: ${{ needs.prepare.outputs.owner_lc }}
       REPO: ${{ needs.prepare.outputs.repo_lc }}
       TAG: ${{ needs.prepare.outputs.tag }}
+      IMAGE: ghcr.io/${{ needs.prepare.outputs.owner_lc }}/${{ needs.prepare.outputs.repo_lc }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ needs.prepare.outputs.tag }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - run: |
+      - name: Install generator deps
+        run: |
+          python3 -m pip install --upgrade pip
           pip install -e .
-          docker-builder --no-root --no-latex
+
+      - name: Generate Dockerfiles
+        run: docker-builder --no-root --no-latex
 
       - name: Save generated Dockerfile
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -70,26 +126,25 @@ jobs:
           path: generated/Dockerfile.${{ matrix.python-version }}.${{ matrix.device-type }}
           if-no-files-found: error
 
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # BUILD DIRECTLY INTO FINAL REPO (multi-tag = ONE manifest)
-      - name: Build and push
+      # Build locally first; the image is pushed only after the scan passes
+      - name: Build (no push)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: generated/Dockerfile.${{ matrix.python-version }}.${{ matrix.device-type }}
-          push: true
-
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}
-            ${{ matrix.python-version == '3.14' && matrix.device-type == 'cpu' && format('{0}/{1}/{2}/python:latest', env.REGISTRY, env.OWNER, env.REPO) || '' }}
+          push: false
+          load: true
+          tags: ${{ env.IMAGE }}
 
           cache-from: |
             type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}-buildcache:${{ matrix.device-type }}-${{ matrix.python-version }}
@@ -98,39 +153,10 @@ jobs:
 
           provenance: false
 
-  scan:
-    needs: [build, prepare]
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ${{ fromJson(needs.prepare.outputs.versions) }}
-        device-type: [cpu, gpu]
-
-    permissions:
-      packages: read
-      security-events: write
-
-    env:
-      OWNER: ${{ needs.prepare.outputs.owner_lc }}
-      REPO: ${{ needs.prepare.outputs.repo_lc }}
-      TAG: ${{ needs.prepare.outputs.tag }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Print Trivy findings (debug)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          image-ref: ${{ env.IMAGE }}
           format: table
           scanners: vuln
           vuln-type: os,library
@@ -142,12 +168,13 @@ jobs:
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ env.OWNER }}/${{ env.REPO }}/python:${{ matrix.python-version }}-${{ matrix.device-type }}-${{ env.TAG }}
+          image-ref: ${{ env.IMAGE }}
           format: sarif
           output: trivy-results.sarif
           scanners: vuln
           vuln-type: os,library
           severity: CRITICAL,HIGH
+          limit-severities-for-sarif: true
           ignore-unfixed: true
           trivyignores: .trivyignore
           exit-code: '1'
@@ -159,38 +186,85 @@ jobs:
           sarif_file: trivy-results.sarif
           category: trivy-${{ matrix.python-version }}-${{ matrix.device-type }}
 
-  #  SINGLE WRITER JOB → avoids race + cleans old tags
-  finalize:
-    needs: [scan, prepare]
+      # Only the versioned tag is pushed here; the floating tags are moved in
+      # the release job once every image has passed.
+      - name: Push versioned image
+        run: docker push "$IMAGE"
+
+  #  SINGLE WRITER JOB → moves floating tags, creates the git tag, cleans the registry
+  release:
+    needs: [build, prepare]
     runs-on: ubuntu-latest
 
     permissions:
+      actions: write
+      contents: write
       packages: write
 
     env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       OWNER: ${{ needs.prepare.outputs.owner_lc }}
+      OWNER_TYPE: ${{ github.event.repository.owner.type }}
       REPO: ${{ needs.prepare.outputs.repo_lc }}
       TAG: ${{ needs.prepare.outputs.tag }}
+      VERSIONS: ${{ needs.prepare.outputs.versions }}
+      LATEST_VERSION: ${{ needs.prepare.outputs.latest_version }}
 
     steps:
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # DELETE old floating tags (clean registry)
-      - name: Remove old stable tags
+      # Point X.Y-<device> (and latest) at the new release without re-pulling
+      - name: Move floating tags
         run: |
-          TAGS=$(gh api \
-            /orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions \
-            --jq '.[].metadata.container.tags[]' | grep -E '^[0-9]+\.[0-9]+-(cpu|gpu)$' || true)
+          BASE="${REGISTRY}/${OWNER}/${REPO}/python"
+          for py in $(jq -r '.[]' <<< "$VERSIONS"); do
+            for device in cpu gpu; do
+              TAGS=(-t "${BASE}:${py}-${device}")
+              if [[ "$py" == "$LATEST_VERSION" && "$device" == "cpu" ]]; then
+                TAGS+=(-t "${BASE}:latest")
+              fi
+              echo "Tagging ${BASE}:${py}-${device}-${TAG} as ${TAGS[*]}"
+              docker buildx imagetools create "${TAGS[@]}" "${BASE}:${py}-${device}-${TAG}"
+            done
+          done
 
-          for t in $TAGS; do
-            if [[ "$t" != *"${TAG}"* ]]; then
-              echo "Deleting old tag: $t"
-              gh api \
-                --method DELETE \
-                /orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions/$(gh api /orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions --jq ".[] | select(.metadata.container.tags[]==\"$t\") | .id")
-            fi
+      - name: Create git tag
+        run: |
+          gh api --method POST "/repos/${GITHUB_REPOSITORY}/git/refs" \
+            -f ref="refs/tags/${TAG}" \
+            -f sha="${GITHUB_SHA}"
+          echo "Created tag ${TAG} at ${GITHUB_SHA}"
+
+      # Rebuild the docs on the tag so they show the release version
+      - name: Deploy docs for the release
+        run: gh workflow run build-docs.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
+
+      # Moving the floating tags never needs them deleted by hand. A rerun after
+      # a failed release re-pushes the versioned tags, leaving the previous
+      # images without any tag; those untagged versions are deleted here. Tagged versions, including
+      # the pinned X.Y-<device>-vA.B.C releases, are always kept.
+      # NOTE: images are single-platform (provenance: false); a multi-platform
+      # build would need its untagged child manifests kept.
+      - name: Remove untagged image versions
+        run: |
+          if [[ "$OWNER_TYPE" == "Organization" ]]; then
+            API="/orgs/${OWNER}/packages/container/${REPO}%2Fpython/versions"
+          else
+            API="/users/${OWNER}/packages/container/${REPO}%2Fpython/versions"
+          fi
+
+          IDS=$(gh api --paginate "$API" \
+            --jq '.[] | select(.metadata.container.tags | length == 0) | .id')
+
+          for id in $IDS; do
+            echo "Deleting untagged version: $id"
+            gh api --method DELETE "$API/$id"
           done

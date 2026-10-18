@@ -50,7 +50,7 @@ If you would like to get to know more about interactive usage of docker see: [in
 ```text
 .
 ├── .github/workflows/
-│   ├── docker-build.yml      # CI pipeline (build & push on tag)
+│   ├── docker-build.yml      # CI pipeline (manual release: build, push & tag)
 │   ├── pre-commit.yml        # Pre-commit hook checks
 │   ├── test-build.yml        # CI pipeline (test Docker build)
 │   └── tests.yml             # Unit & integration tests
@@ -155,22 +155,26 @@ generated/
 
 ### Trigger
 
-The workflow runs when you push a tag:
+Releases are started manually, from **Actions → Build and Push Docker Images → Run workflow**
+on `master`, or from the command line:
 
 ```bash
-git commit -m "Commit message"
-git tag v1.0.0
-git push origin v1.0.0
+gh workflow run docker-build.yml -f version=v1.0.0   # explicit version
+gh workflow run docker-build.yml                     # bump the patch number of the latest tag
 ```
+
+The git tag is created by the workflow only after every image has been built and scanned,
+so a failed run leaves no tag behind: fix the problem and run it again with the same version.
 
 ### What happens
 
-1. Extracts the Git tag (`v1.0.0`)
+1. Checks the version (`vMAJOR.MINOR.PATCH`, not already tagged) and that the run is on `master`
 2. Reads Python versions from config
 3. Generates Dockerfiles
-4. Builds images (CPU only)
-5. Pushes to GHCR
-6. Applies tags
+4. Builds the CPU and GPU images and scans them with Trivy
+5. Pushes the versioned images (`<python-version>-<device>-<git-tag>`) to GHCR
+6. Once all images pass, moves the `<python-version>-<device>` and `latest` tags to them
+7. Creates the git tag and removes untagged images from GHCR
 
 ---
 
