@@ -144,6 +144,9 @@ jobs:
           file: generated/Dockerfile.${{ matrix.python-version }}.${{ matrix.device-type }}
           push: false
           load: true
+          pull: true
+          build-args: |
+            APT_CACHE_BUST=${{ github.run_id }}-${{ github.run_attempt }}
           tags: ${{ env.IMAGE }}
 
           cache-from: |
