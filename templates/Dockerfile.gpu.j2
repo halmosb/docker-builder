@@ -62,6 +62,9 @@ ml        : :diffget //2 - accept ours   in a three-way merge conflict (vim-fugi
 mr        : :diffget //3 - accept theirs in a three-way merge conflict (vim-fugitive)"
 
 # System deps
+# A new APT_CACHE_BUST value (CI passes the run id) invalidates the cached
+# layer, so security updates are always picked up by apt-get upgrade.
+ARG APT_CACHE_BUST
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
